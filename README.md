@@ -12,10 +12,12 @@ git clone https://github.com/niteshbalusu11/rustdress.git
 
 cd rustdress
 
-cargo build
-
 # Edit the .env file and add the necessary values
 cp .env.example .env
 
 cargo run
+
+# You might have to install cmake, pkg-config
+
+sudo apt-get install cmake pkg-config
 ```
