@@ -52,14 +52,20 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
     let (domain, username) = get_identifiers();
     // let identifier = username.as_str() + "@" + &domain;
     let identifier = format!("{}@{}", username, domain);
-    let metdata = [
+    // let metdata = [
+    //     ["text/identifier", &identifier],
+    //     ["text/plain", &("Satoshis to ".to_owned() + &identifier)],
+    // ];
+
+    let metadata = serde_json::to_string(&[
         ["text/identifier", &identifier],
         ["text/plain", &("Satoshis to ".to_owned() + &identifier)],
-    ];
+    ])
+    .expect("Failed to serialize metadata");
 
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
-    let response_body = json!({ "status": "OK", "callback": lnurl_url, "tag": "payRequest", "maxSendable": 100000000, "minSendable": 1000, "commentAllowed": 0, "metadata": metdata});
+    let response_body = json!({ "status": "OK", "callback": lnurl_url, "tag": "payRequest", "maxSendable": 100000000, "minSendable": 1000, "commentAllowed": 0, "metadata": metadata});
     let response_body_string =
         serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
 
