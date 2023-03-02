@@ -1,9 +1,9 @@
+use crate::{credentials::get_lnd::get_lnd, server::utils::bech32_encode};
 use http::uri::Uri;
 use hyper::{http, Body, Request, Response, StatusCode};
 use lnd_grpc_rust::lnrpc::Invoice;
+use ring::digest;
 use serde_json::json;
-
-use crate::{credentials::get_lnd::get_lnd, server::utils::bech32_encode};
 
 use super::utils::{add_hop_hints, get_identifiers};
 
@@ -59,6 +59,10 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
     ])
     .expect("Failed to serialize metadata");
 
+    let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
+        .as_ref()
+        .to_vec();
+
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
     let response_body = json!({ "status": "OK", "callback": lnurl_url, "tag": "payRequest", "maxSendable": 100000000, "minSendable": 1000, "commentAllowed": 0, "metadata": metadata});
@@ -112,6 +116,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                                 value_msat: amount.unwrap(),
                                 expiry: 300,
                                 private: add_hop_hints(),
+                                description_hash: digest,
                                 ..Default::default()
                             })
                             .await
