@@ -1,4 +1,4 @@
-# RustAress
+# RustDress
 Self hosted Lightning Address Server
 
 Pre-requisites:
