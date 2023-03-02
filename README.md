@@ -12,5 +12,5 @@ cargo build
 # Edit the .env file and add the necessary values
 cp .env.example .env
 
-# Run the executable in the target/debug directory
+cargo run
 ```
