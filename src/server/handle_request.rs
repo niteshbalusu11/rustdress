@@ -50,12 +50,8 @@ fn handle_unknown_path() -> Result<Response<Body>, hyper::Error> {
 
 async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hyper::Error> {
     let (domain, username) = get_identifiers();
-    // let identifier = username.as_str() + "@" + &domain;
+
     let identifier = format!("{}@{}", username, domain);
-    // let metdata = [
-    //     ["text/identifier", &identifier],
-    //     ["text/plain", &("Satoshis to ".to_owned() + &identifier)],
-    // ];
 
     let metadata = serde_json::to_string(&[
         ["text/identifier", &identifier],
