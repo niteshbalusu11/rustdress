@@ -1,6 +1,11 @@
 # RustAress
 Self hosted Lightning Address Server
 
+Pre-requisites:
+You will need rust installed.
+https://www.rust-lang.org/
+
+
 To install
 ```bash
 git clone https://github.com/niteshbalusu11/rustdress.git
