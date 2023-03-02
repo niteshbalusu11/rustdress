@@ -1,0 +1,15 @@
+[package]
+name = "rustdress"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bech32 = "0.9.1"
+chrono = "0.4.23"
+dotenv = "0.15.0"
+hyper = "0.14.24"
+lnd_grpc_rust = "2.0.0"
+serde_json = "1.0.93"
+tokio = "1.25.0"
