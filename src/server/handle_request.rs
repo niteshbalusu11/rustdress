@@ -66,7 +66,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
     let response_body = json!({
-        "allowsNostr": true,
+        "allowsNostr": false,
         "callback": lnurl_url,
         "commentAllowed": 50,
         "maxSendable": 100000000,
