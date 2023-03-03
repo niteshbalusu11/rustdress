@@ -55,7 +55,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 
     let metadata = serde_json::to_string(&[
         ["text/identifier", &identifier],
-        ["text/plain", &("Satoshis to ".to_owned() + &identifier)],
+        ["text/plain", &format!("Paying satoshis to {}", identifier)],
     ])
     .expect("Failed to serialize metadata");
 
@@ -102,7 +102,13 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                 }
 
                 let comment = match parse_comment_key(comment_key.cloned()) {
-                    Ok(c) => c,
+                    Ok(c) => {
+                        if c.is_empty() {
+                            format!("Paying satoshis to {}", identifier)
+                        } else {
+                            c
+                        }
+                    }
                     Err(_) => {
                         return handle_bad_request("FailedToParseComments");
                     }
@@ -113,7 +119,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                     ["text/plain", &comment],
                 ])
                 .expect("Failed to serialize metadata");
-
+                println!("{}", metadata);
                 let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
                     .as_ref()
                     .to_vec();
