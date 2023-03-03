@@ -165,6 +165,7 @@ fn handle_bad_request(reason: &str) -> Result<Response<Body>, hyper::Error> {
 
     let resp = Response::builder()
         .status(StatusCode::BAD_REQUEST)
+        .header("Access-Control-Allow-Origin", "*")
         .body(Body::from(response_body_string))
         .unwrap();
     Ok(resp)
@@ -174,6 +175,7 @@ fn handle_ok_request(body: String) -> Result<Response<Body>, hyper::Error> {
     let resp = Response::builder()
         .status(StatusCode::OK)
         .header("content-type", "application/json")
+        .header("Access-Control-Allow-Origin", "*")
         .body(Body::from(body))
         .unwrap();
     Ok(resp)
