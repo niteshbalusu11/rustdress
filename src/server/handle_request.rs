@@ -55,9 +55,13 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 
     let metadata = serde_json::to_string(&[
         ["text/identifier", &identifier],
-        // ["text/plain", &format!("Paying satoshis to {}", identifier)],
+        ["text/plain", &format!("Paying satoshis to {}", identifier)],
     ])
     .expect("Failed to serialize metadata");
+
+    let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
+        .as_ref()
+        .to_vec();
 
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
@@ -114,25 +118,16 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                     }
                 };
 
-                let metadata = serde_json::to_string(&[
-                    ["text/identifier", &identifier],
-                    ["text/plain", &comment],
-                ])
-                .expect("Failed to serialize metadata");
-                println!("{}", metadata);
-                let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
-                    .as_ref()
-                    .to_vec();
-
                 let mut lnd = get_lnd().await;
 
                 let result = lnd
                     .lightning()
                     .add_invoice(Invoice {
-                        value_msat: amount,
-                        expiry: 300,
-                        private: add_hop_hints(),
                         description_hash: digest,
+                        expiry: 300,
+                        memo: comment,
+                        private: add_hop_hints(),
+                        value_msat: amount,
                         ..Default::default()
                     })
                     .await
