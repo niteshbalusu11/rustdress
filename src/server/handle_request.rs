@@ -29,7 +29,7 @@ fn handle_default_path() -> Result<Response<Body>, hyper::Error> {
 
     match encoded {
         Ok(s) => {
-            let response_body = json!({ "lnurl": s, "decoded_url": lnurl_url.clone(), "info": {"title": "RustDress: Lightning Address Personal Server", "source": "TODO"}  });
+            let response_body = json!({ "lnurl": s, "decoded_url": lnurl_url.clone(), "info": {"title": "RustDress: Lightning Address Personal Server", "source": "https://github.com/niteshbalusu11/rustdress"}  });
             let response_body_string = serde_json::to_string(&response_body)
                 .expect("Failed to serialize response body to JSON");
 
@@ -59,13 +59,18 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
     ])
     .expect("Failed to serialize metadata");
 
-    let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
-        .as_ref()
-        .to_vec();
-
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
-    let response_body = json!({ "status": "OK", "callback": lnurl_url, "tag": "payRequest", "maxSendable": 100000000, "minSendable": 1000, "commentAllowed": 0, "metadata": metadata});
+    let response_body = json!({
+        "allowsNostr": true,
+        "callback": lnurl_url,
+        "commentAllowed": 50,
+        "maxSendable": 100000000,
+        "metadata": metadata,
+        "minSendable": 1000,
+        "tag": "payRequest",
+        "status": "OK",
+    });
     let response_body_string =
         serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
 
@@ -83,61 +88,63 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                     })
                     .collect();
 
-                let key_found = find_key("amount", &query_pairs);
-
-                match key_found {
-                    Some(k) => {
-                        let (_, a) = k;
-                        let amount = a.parse::<i64>();
-
-                        match amount {
-                            Ok(a) => {
-                                if a < 1000 {
-                                    return handle_bad_request(
-                                        "Expted Amount Greater Than 1000mSat",
-                                    );
-                                }
-
-                                if a > 100000000 {
-                                    return handle_bad_request(
-                                        "Expted Amount Greater Than 1000mSat",
-                                    );
-                                }
-                            }
-
-                            Err(_) => return handle_bad_request("Unable To Parse Amount"),
-                        };
-
-                        let mut lnd = get_lnd().await;
-
-                        let result = lnd
-                            .lightning()
-                            .add_invoice(Invoice {
-                                value_msat: amount.unwrap(),
-                                expiry: 300,
-                                private: add_hop_hints(),
-                                description_hash: digest,
-                                ..Default::default()
-                            })
-                            .await
-                            .expect("FailedToAuthenticateToLnd");
-                        let pr = result.into_inner().payment_request;
-
-                        let response_body = json!({
-                            "status": "OK",
-                            "routes": [],
-                            "successAction": { "tag": "message", "message": "Payment received!" },
-                            "pr": pr,
-                            "disposable": false,
-                        });
-
-                        let response_body_string = serde_json::to_string(&response_body)
-                            .expect("Failed to serialize response body to JSON");
-
-                        return handle_ok_request(response_body_string);
+                let amount_key = find_key("amount", &query_pairs);
+                let comment_key = find_key("comment", &query_pairs);
+                let amount = match parse_amount_key(amount_key.cloned()) {
+                    Ok(a) => a,
+                    Err(_) => {
+                        return handle_bad_request("UnableToParseAmount");
                     }
-                    _ => return handle_bad_request("Invalid Query Parameters"),
+                };
+
+                if amount == 0 {
+                    return handle_ok_request(response_body_string);
                 }
+
+                let comment = match parse_comment_key(comment_key.cloned()) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        return handle_bad_request("FailedToParseComments");
+                    }
+                };
+
+                let metadata = serde_json::to_string(&[
+                    ["text/identifier", &identifier],
+                    ["text/plain", &comment],
+                ])
+                .expect("Failed to serialize metadata");
+
+                let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
+                    .as_ref()
+                    .to_vec();
+
+                let mut lnd = get_lnd().await;
+
+                let result = lnd
+                    .lightning()
+                    .add_invoice(Invoice {
+                        value_msat: amount,
+                        expiry: 300,
+                        private: add_hop_hints(),
+                        description_hash: digest,
+                        ..Default::default()
+                    })
+                    .await
+                    .expect("FailedToAuthenticateToLnd");
+                let pr = result.into_inner().payment_request;
+
+                let response_body = json!({
+                    "disposable": false,
+                    "pr": pr,
+                    "routes": [],
+                    "status": "OK",
+                    "successAction": { "tag": "message", "message": "Payment received!" },
+                });
+
+                let response_body_string = serde_json::to_string(&response_body)
+                    .expect("Failed to serialize response body to JSON");
+
+                return handle_ok_request(response_body_string);
             } else {
                 return handle_ok_request(response_body_string);
             }
@@ -170,4 +177,39 @@ fn handle_ok_request(body: String) -> Result<Response<Body>, hyper::Error> {
         .body(Body::from(body))
         .unwrap();
     Ok(resp)
+}
+
+fn parse_amount_key(key: Option<(String, String)>) -> Result<i64, String> {
+    match key {
+        Some((_, amount)) => {
+            let amount = amount.parse::<i64>();
+
+            match amount {
+                Ok(a) => {
+                    if a < 1000 || a > 100000000 {
+                        return Err("AmountOutOfRange".to_string());
+                    }
+
+                    Ok(a)
+                }
+
+                _ => Err("FailedToParseAmount".to_string()),
+            }
+        }
+        None => Ok(0),
+    }
+}
+
+fn parse_comment_key(key: Option<(String, String)>) -> Result<String, String> {
+    match key {
+        Some((_, comment)) => {
+            if comment.len() > 50 || comment.is_empty() {
+                return Err("CommentCannotBeBlankOrGreaterThan50Characters".to_string());
+            }
+
+            return Ok(comment);
+        }
+
+        None => Ok("".to_string()),
+    }
 }
