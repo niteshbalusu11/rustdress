@@ -68,7 +68,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
     let response_body = json!({
         "allowsNostr": false,
         "callback": lnurl_url,
-        "commentAllowed": 50,
+        "commentAllowed": 0,
         "maxSendable": 100000000,
         "metadata": metadata,
         "minSendable": 1000,
