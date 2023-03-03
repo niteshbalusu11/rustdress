@@ -105,13 +105,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                 }
 
                 let comment = match parse_comment_key(comment_key.cloned()) {
-                    Ok(c) => {
-                        if c.is_empty() {
-                            format!("Paying satoshis to {}", identifier)
-                        } else {
-                            c
-                        }
-                    }
+                    Ok(c) => c,
                     Err(_) => {
                         return handle_bad_request("FailedToParseComments");
                     }
@@ -205,7 +199,7 @@ fn parse_amount_key(key: Option<(String, String)>) -> Result<i64, String> {
 fn parse_comment_key(key: Option<(String, String)>) -> Result<String, String> {
     match key {
         Some((_, comment)) => {
-            if comment.len() > 50 || comment.is_empty() {
+            if comment.len() > 280 {
                 return Err("CommentCannotBeBlankOrGreaterThan50Characters".to_string());
             }
 
