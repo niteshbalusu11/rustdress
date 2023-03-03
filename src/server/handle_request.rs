@@ -55,7 +55,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 
     let metadata = serde_json::to_string(&[
         ["text/identifier", &identifier],
-        ["text/plain", &format!("Paying satoshis to {}", identifier)],
+        // ["text/plain", &format!("Paying satoshis to {}", identifier)],
     ])
     .expect("Failed to serialize metadata");
 
@@ -139,7 +139,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                     .expect("FailedToAuthenticateToLnd");
                 let pr = result.into_inner().payment_request;
 
-                let response_body = json!({
+                let success_response_body = json!({
                     "disposable": false,
                     "pr": pr,
                     "routes": [],
@@ -147,10 +147,10 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                     "successAction": { "tag": "message", "message": "Payment received!" },
                 });
 
-                let response_body_string = serde_json::to_string(&response_body)
+                let success_response_body_string = serde_json::to_string(&success_response_body)
                     .expect("Failed to serialize response body to JSON");
 
-                return handle_ok_request(response_body_string);
+                return handle_ok_request(success_response_body_string);
             } else {
                 return handle_ok_request(response_body_string);
             }
