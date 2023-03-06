@@ -105,8 +105,7 @@ pub async fn create_invoice(
     let invoice_result = result.into_inner();
 
     println!("returning payment request {:?}", invoice_result);
-    print!("Nostr Query:  {:?}", nostr_query);
-
+    println!("{:?}", nostr_query);
     if nostr_query.is_ok() {
         println!("inside this");
         let r_hash = invoice_result.r_hash;
@@ -135,6 +134,7 @@ async fn watch_invoice(zap_request: String, mut lnd: LndClient, r_hash: &Vec<u8>
         .expect("FailedToReceiveInvoiceSubscriptionInfo")
     {
         if let Some(state) = InvoiceState::from_i32(invoice.state) {
+            println!("invoice settled");
             // If this invoice was Settled we can do something with it
             if state == InvoiceState::Settled {
                 publish_zap_to_relays(

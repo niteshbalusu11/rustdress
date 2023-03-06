@@ -132,12 +132,6 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<String, String
                         return Err("MissingRelaysInZapRequest".to_string());
                     }
 
-                    if relaytags.is_some() {
-                        if relaytags.unwrap().len() >= 2 {
-                            return Err("MultipleRelaysInZapRequest".to_string());
-                        }
-                    }
-
                     if calculate_id(&p) != p.id {
                         return Err("InvalidZapRequestId".to_string());
                     }
@@ -161,8 +155,14 @@ pub fn get_tags(tags: &Vec<Vec<String>>, key: &str) -> Option<Vec<String>> {
     let mut values = Vec::new();
 
     for tag in tags.iter() {
-        if tag.len() >= 2 && tag[0] == key {
-            values.push(tag[1].clone());
+        if tag[0] == key {
+            if key == "relays" {
+                for i in 1..tag.len() {
+                    values.push(tag[i].clone());
+                }
+            } else {
+                values.push(tag[1].clone());
+            }
         }
     }
 
