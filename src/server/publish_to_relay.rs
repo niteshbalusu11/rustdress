@@ -105,6 +105,7 @@ pub fn publish_zap_to_relays(
 
 async fn publish(relays: Vec<String>, publish_message: String) {
     for relay in relays {
+        println!("{:?}", relay);
         let (host, port) = match relay.split_once("://") {
             Some((_, addr)) => match addr.split_once(":") {
                 Some((host, port)) => {
@@ -125,7 +126,7 @@ async fn publish(relays: Vec<String>, publish_message: String) {
             Ok((websocket, _)) => (websocket, ()),
             Err(err) => {
                 println!("Failed to connect to relay {:?}: {:?}", relay, err);
-                // continue;
+                continue;
             }
         };
 
