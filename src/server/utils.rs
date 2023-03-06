@@ -105,6 +105,7 @@ pub async fn create_invoice(
     let invoice_result = result.into_inner();
 
     println!("returning payment request {:?}", invoice_result);
+    print!("Nostr Query:  {:?}", nostr_query);
 
     if nostr_query.is_ok() {
         println!("inside this");
