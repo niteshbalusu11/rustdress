@@ -125,7 +125,7 @@ async fn publish(relays: Vec<String>, publish_message: String) {
             Ok((websocket, _)) => (websocket, ()),
             Err(err) => {
                 println!("Failed to connect to relay {:?}: {:?}", relay, err);
-                continue;
+                // continue;
             }
         };
 
