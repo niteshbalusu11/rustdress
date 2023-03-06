@@ -1,11 +1,15 @@
-use crate::{credentials::get_lnd::get_lnd, server::utils::bech32_encode};
+use crate::server::utils::bech32_encode;
 use http::uri::Uri;
-use hyper::{http, Body, Request, Response, StatusCode};
-use lnd_grpc_rust::lnrpc::Invoice;
-use ring::digest;
+use hyper::{http, Body, Request, Response};
 use serde_json::json;
 
-use super::utils::{add_hop_hints, get_identifiers};
+use super::{
+    parsing_functions::{
+        find_key, get_digest, handle_bad_request, handle_ok_request, handle_response_body,
+        parse_amount_query, parse_comment_query, parse_nostr_query,
+    },
+    utils::{create_invoice, get_identifiers},
+};
 
 pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
@@ -49,35 +53,9 @@ fn handle_unknown_path() -> Result<Response<Body>, hyper::Error> {
 }
 
 async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hyper::Error> {
-    let (domain, username) = get_identifiers();
-
-    let identifier = format!("{}@{}", username, domain);
-
-    let metadata = serde_json::to_string(&[
-        ["text/identifier", &identifier],
-        ["text/plain", &format!("Paying satoshis to {}", identifier)],
-    ])
-    .expect("Failed to serialize metadata");
-
-    let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
-        .as_ref()
-        .to_vec();
-
-    let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
-
-    let response_body = json!({
-        "callback": lnurl_url,
-        "commentAllowed": 50,
-        "maxSendable": 100000000,
-        "metadata": metadata,
-        "minSendable": 1000,
-        "tag": "payRequest",
-        "status": "OK",
-    });
-    let response_body_string =
-        serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
-
     let username = path.rsplitn(2, '/').next();
+    let response_body_string = handle_response_body();
+
     match username {
         Some(name) if !name.is_empty() => {
             if let Some(query_str) = uri.query() {
@@ -93,10 +71,27 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 
                 let amount_key = find_key("amount", &query_pairs);
                 let comment_key = find_key("comment", &query_pairs);
-                let amount = match parse_amount_key(amount_key.cloned()) {
+                let nostr_key = find_key("nostr", &query_pairs);
+
+                let parsed_nostr_query = parse_nostr_query(nostr_key.cloned());
+                let digest: Vec<u8>;
+
+                match parsed_nostr_query {
+                    Ok(ref decoded_query) => digest = get_digest(decoded_query.to_string()),
+                    Err(_) => digest = get_digest("".to_string()),
+                }
+
+                let amount = match parse_amount_query(amount_key.cloned()) {
                     Ok(a) => a,
                     Err(_) => {
                         return handle_bad_request("UnableToParseAmount");
+                    }
+                };
+
+                let comment = match parse_comment_query(comment_key.cloned()) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        return handle_bad_request("FailedToParseComments");
                     }
                 };
 
@@ -104,28 +99,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                     return handle_ok_request(response_body_string);
                 }
 
-                let comment = match parse_comment_key(comment_key.cloned()) {
-                    Ok(c) => c,
-                    Err(_) => {
-                        return handle_bad_request("FailedToParseComments");
-                    }
-                };
-
-                let mut lnd = get_lnd().await;
-
-                let result = lnd
-                    .lightning()
-                    .add_invoice(Invoice {
-                        description_hash: digest,
-                        expiry: 300,
-                        memo: comment,
-                        private: add_hop_hints(),
-                        value_msat: amount,
-                        ..Default::default()
-                    })
-                    .await
-                    .expect("FailedToAuthenticateToLnd");
-                let pr = result.into_inner().payment_request;
+                let pr = create_invoice(digest, comment, amount, parsed_nostr_query).await;
 
                 let success_response_body = json!({
                     "disposable": false,
@@ -144,68 +118,5 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
             }
         }
         _ => return handle_bad_request("Username Not Found"),
-    }
-}
-
-fn find_key<'a>(key: &'a str, vector: &'a [(String, String)]) -> Option<&'a (String, String)> {
-    vector.iter().find(|(k, _)| *k == key)
-}
-
-fn handle_bad_request(reason: &str) -> Result<Response<Body>, hyper::Error> {
-    let response_body = json!({ "status": "ERROR", "reason": reason});
-
-    let response_body_string =
-        serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
-
-    let resp = Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .header("Access-Control-Allow-Origin", "*")
-        .body(Body::from(response_body_string))
-        .unwrap();
-    Ok(resp)
-}
-
-fn handle_ok_request(body: String) -> Result<Response<Body>, hyper::Error> {
-    let resp = Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/json")
-        .header("Access-Control-Allow-Origin", "*")
-        .body(Body::from(body))
-        .unwrap();
-    Ok(resp)
-}
-
-fn parse_amount_key(key: Option<(String, String)>) -> Result<i64, String> {
-    match key {
-        Some((_, amount)) => {
-            let amount = amount.parse::<i64>();
-
-            match amount {
-                Ok(a) => {
-                    if a < 1000 || a > 100000000 {
-                        return Err("AmountOutOfRange".to_string());
-                    }
-
-                    Ok(a)
-                }
-
-                _ => Err("FailedToParseAmount".to_string()),
-            }
-        }
-        None => Ok(0),
-    }
-}
-
-fn parse_comment_key(key: Option<(String, String)>) -> Result<String, String> {
-    match key {
-        Some((_, comment)) => {
-            if comment.len() > 280 {
-                return Err("CommentCannotBeBlankOrGreaterThan50Characters".to_string());
-            }
-
-            return Ok(comment);
-        }
-
-        None => Ok("".to_string()),
     }
 }
