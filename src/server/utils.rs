@@ -72,6 +72,8 @@ pub fn get_nostr_keys() -> Result<(String, String), String> {
     let pubkey_bytes = private_key_to_public_key(&privkey_bytes);
     let pubkey_hex = hex::encode(&pubkey_bytes);
 
+    println!("Public Key is: {:?}", pubkey_hex);
+
     Ok((privkey, pubkey_hex))
 }
 
@@ -79,7 +81,8 @@ fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
     let secp = Secp256k1::new();
     let secret_key = SecretKey::from_slice(privkey).unwrap();
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-    return public_key.serialize_uncompressed().to_vec();
+
+    return public_key.serialize().to_vec();
 }
 
 pub async fn create_invoice(

@@ -26,6 +26,15 @@ fn sign_message(privkey: String, message: &str) -> String {
     let pair = KeyPair::from_seckey_slice(&secp, &secret_key.secret_bytes())
         .expect("Failed to generate keypair from secret key");
 
+    let public_key = PublicKey::from_secret_key(&secp, &secret_key)
+        .serialize()
+        .to_vec();
+
+    println!(
+        "Public Key while signing is: {:?}",
+        hex::encode(&public_key)
+    );
+
     let message =
         Message::from_slice(&hex::decode(message).expect("UnableToDecodeHexMessageForSigning"))
             .expect("FailedToConvertHexMessageToBytes");
