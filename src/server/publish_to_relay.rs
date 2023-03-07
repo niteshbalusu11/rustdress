@@ -1,10 +1,12 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures_util::sink::SinkExt;
-use secp256k1::{Message, Secp256k1, SecretKey};
+use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
+
+use super::some::some;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ZapRequest2 {
@@ -17,22 +19,46 @@ pub struct ZapRequest2 {
     tags: Vec<Vec<String>>,
 }
 
+// fn sign_message(privkey: String, message: &str) -> String {
+//     some(&message);
+//     // Step 1: Convert the string to a byte array
+//     let msg =
+//         Message::from_slice(&hex::decode(message).expect("UnableToDecodeHexMessageForSigning"))
+//             .expect("FailedToConvertHexMessageToBytes");
+
+//     // Step 2: Load the private key into a SecretKey object
+//     let secp = Secp256k1::new();
+//     let secret_key = hex::decode(privkey).expect("FailedToDecodePrivateKeyToBytes");
+//     let sk = SecretKey::from_slice(&secret_key).expect("FailedToConvertBytesToSecretKeyType");
+
+//     // Step 3: Sign the byte array using the SecretKey object
+//     let sig = secp.sign_ecdsa(&msg, &sk);
+
+//     // Step 4: Convert the signature byte array to a hex string
+//     hex::encode(sig.serialize_compact())
+// }
+
 fn sign_message(privkey: String, message: &str) -> String {
-    // Step 1: Convert the string to a byte array
-    let msg =
+    // some(&message);
+
+    let secp = Secp256k1::new();
+    let secret_key =
+        SecretKey::from_slice(&hex::decode(privkey).expect("FailedToDecodeHexPrivateKey"))
+            .expect("32 bytes, within curve order");
+    let (xpub, _) = PublicKey::from_secret_key(&secp, &secret_key).x_only_public_key();
+    let pair = KeyPair::from_seckey_slice(&secp, &secret_key.secret_bytes())
+        .expect("Failed to generate keypair from secret key");
+    // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
+    // See the above example for how to use this library together with `bitcoin-hashes-std`.
+    let message =
         Message::from_slice(&hex::decode(message).expect("UnableToDecodeHexMessageForSigning"))
             .expect("FailedToConvertHexMessageToBytes");
 
-    // Step 2: Load the private key into a SecretKey object
-    let secp = Secp256k1::new();
-    let secret_key = hex::decode(privkey).expect("FailedToDecodePrivateKeyToBytes");
-    let sk = SecretKey::from_slice(&secret_key).expect("FailedToConvertBytesToSecretKeyType");
-
-    // Step 3: Sign the byte array using the SecretKey object
-    let sig = secp.sign_ecdsa(&msg, &sk);
+    // let sig = secp.sign_ecdsa(&message, &secret_key);
+    let sig = secp.sign_schnorr_no_aux_rand(&message, &pair);
 
     // Step 4: Convert the signature byte array to a hex string
-    hex::encode(sig.serialize_compact())
+    return hex::encode(sig.as_ref());
 }
 
 pub fn publish_zap_to_relays(

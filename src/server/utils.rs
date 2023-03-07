@@ -60,6 +60,20 @@ pub fn buffer_as_hex(bytes: Vec<u8>) -> String {
     return hex_str;
 }
 
+// fn sign_message(message: &str, private_key: &[u8]) -> String {
+//     // Generate a keypair from the private key
+//     let keypair = Keypair::from_secret_slice(private_key).expect("Invalid private key");
+
+//     // Sign the message
+//     let message_bytes = message.as_bytes();
+//     let signature: Signature = keypair.sign(message_bytes);
+
+//     // Print the signature bytes as a hex string
+//     println!("{}", hex::encode(signature.to_bytes()));
+
+//     return hex::encode(signature.to_bytes());
+// }
+
 pub fn get_nostr_keys() -> Result<(String, String), String> {
     dotenv::dotenv().ok();
 
@@ -81,6 +95,13 @@ fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
     return public_key.serialize_uncompressed().to_vec();
 }
+
+// fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
+//     let secp = Secp256k1::new();
+//     let secret_key = SecretKey::from_slice(privkey).unwrap();
+//     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+//     return public_key.serialize_uncompressed().to_vec();
+// }
 
 pub async fn create_invoice(
     digest: Vec<u8>,
