@@ -1,7 +1,7 @@
 use hyper::{Body, Response, StatusCode};
 use ring::digest;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, to_vec};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 use urlencoding::decode;
 
@@ -173,7 +173,7 @@ pub fn get_tags(tags: &Vec<Vec<String>>, key: &str) -> Option<Vec<String>> {
     }
 }
 
-pub fn event_commitment(ev: &ZapRequest) -> Vec<u8> {
+pub fn event_commitment(ev: &ZapRequest) -> String {
     let pubkey = ev.pubkey.clone();
     let created_at = ev.created_at;
     let kind = ev.kind;
@@ -181,12 +181,14 @@ pub fn event_commitment(ev: &ZapRequest) -> Vec<u8> {
     let content = ev.content.clone();
 
     let commitment = json!([0, pubkey, created_at, kind, tags, content]);
-    to_vec(&commitment).unwrap()
+    serde_json::to_string(&commitment).unwrap()
 }
 
 pub fn calculate_id(ev: &ZapRequest) -> String {
     let commitment = event_commitment(&ev);
-    let hash = Sha256::digest(&commitment);
+    let mut hasher = Sha256::new();
+    hasher.update(commitment.as_bytes());
+    let hash = hasher.finalize();
     hex::encode(hash)
 }
 
