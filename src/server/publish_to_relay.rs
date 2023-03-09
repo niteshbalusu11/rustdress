@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures_util::sink::SinkExt;
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
@@ -54,22 +56,20 @@ pub fn publish_zap_to_relays(
     let relays = get_tags(&zap_request_json.tags, "relays")
         .expect("FailedToParseE-TagsForPublishingToRelays");
 
-    let ptags =
+    let get_etags =
+        get_tags(&zap_request_json.tags, "e").expect("FailedToParseP-TagsForPublishingToRelays");
+
+    let get_ptags =
         get_tags(&zap_request_json.tags, "p").expect("FailedToParseP-TagsForPublishingToRelays");
-    let etags =
-        get_tags(&zap_request_json.tags, "e").expect("FailedToParseE-TagsForPublishingToRelays");
 
-    let mut bolt11 = Vec::new();
-    bolt11.push("bolt11".to_string());
-    bolt11.push(payment_request);
+    let ptags = vec!["p", &get_ptags[0]];
+    let etags = vec!["e", &get_etags[0]];
 
-    let mut description = Vec::new();
-    description.push("description".to_string());
-    description.push(zap_request);
+    let bolt11 = vec!["bolt11", &payment_request];
 
-    let mut payment_secret = Vec::new();
-    payment_secret.push("preimage".to_string());
-    payment_secret.push(decoded_preimage);
+    let description = vec!["description", &zap_request];
+
+    let payment_secret = vec!["preimage", &decoded_preimage];
 
     let content = if comment.is_empty() {
         zap_request_json.content
@@ -88,6 +88,8 @@ pub fn publish_zap_to_relays(
         "content": content,
         "sig": sig
     });
+
+    println!("ptags are :  {:?}", ptags);
     zap_note["tags"].as_array_mut().unwrap().push(ptags.into());
     zap_note["tags"].as_array_mut().unwrap().push(etags.into());
     zap_note["tags"].as_array_mut().unwrap().push(bolt11.into());
