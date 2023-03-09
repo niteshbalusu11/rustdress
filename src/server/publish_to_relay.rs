@@ -100,10 +100,10 @@ pub fn publish_zap_to_relays(
         .unwrap()
         .push(description.into());
 
-    println!("zap note to be published:  {:?}", zap_note);
-
     let publish_message =
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
+
+    println!("zap note to be published:  {:?}", publish_message);
 
     tokio::spawn(async move {
         publish(relays, publish_message).await;
