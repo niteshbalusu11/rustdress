@@ -9,13 +9,13 @@ use super::utils::{get_identifiers, get_nostr_keys};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ZapRequest {
-    content: String,
-    created_at: u64,
-    id: String,
-    kind: u64,
-    pubkey: String,
-    sig: String,
-    tags: Vec<Vec<String>>,
+    pub content: String,
+    pub created_at: u64,
+    pub id: String,
+    pub kind: u64,
+    pub pubkey: String,
+    pub sig: String,
+    pub tags: Vec<Vec<String>>,
 }
 
 pub fn find_key<'a>(key: &'a str, vector: &'a [(String, String)]) -> Option<&'a (String, String)> {

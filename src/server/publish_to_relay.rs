@@ -1,21 +1,11 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures_util::sink::SinkExt;
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ZapRequest2 {
-    content: String,
-    created_at: u64,
-    id: String,
-    kind: u64,
-    pubkey: String,
-    sig: String,
-    tags: Vec<Vec<String>>,
-}
+use super::parsing_functions::{calculate_id, ZapRequest};
 
 fn sign_message(privkey: String, message: &str) -> String {
     let secp = Secp256k1::new();
@@ -31,8 +21,9 @@ fn sign_message(privkey: String, message: &str) -> String {
         .to_vec();
 
     println!(
-        "Public Key while signing is: {:?}",
-        hex::encode(&public_key)
+        "Public Key while signing is: {:?}, xpub while signing is: {:?}",
+        hex::encode(&public_key),
+        hex::encode(&xpub.serialize())
     );
 
     let message =
@@ -55,8 +46,11 @@ pub fn publish_zap_to_relays(
 ) {
     let decoded_preimage = hex::encode(preimage);
     let (privkey, pubkey) = get_nostr_keys().unwrap();
-    let zap_request_json = serde_json::from_str::<ZapRequest2>(&zap_request)
+    let zap_request_json = serde_json::from_str::<ZapRequest>(&zap_request)
         .expect("FailedToParseZapRequestForPublishingToRelays");
+
+    let id = calculate_id(&zap_request_json);
+
     let relays = get_tags(&zap_request_json.tags, "relays")
         .expect("FailedToParseE-TagsForPublishingToRelays");
 
@@ -89,7 +83,7 @@ pub fn publish_zap_to_relays(
         "kind": 9735,
         "pubkey": pubkey,
         "created_at": settle_date,
-        "id": zap_request_json.id,
+        "id": id,
         "tags": [],
         "content": content,
         "sig": sig

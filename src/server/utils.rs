@@ -82,7 +82,11 @@ fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
     let secret_key = SecretKey::from_slice(privkey).unwrap();
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
-    return public_key.serialize().to_vec();
+    let mut serialized = public_key.serialize().to_vec();
+    if serialized[0] == 0x02 {
+        serialized.remove(0);
+    }
+    return serialized;
 }
 
 pub async fn create_invoice(
