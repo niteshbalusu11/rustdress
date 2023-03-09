@@ -78,34 +78,29 @@ pub fn publish_zap_to_relays(
     };
 
     let sig = sign_message(privkey, &zap_request_json.id);
+    let mut tags = Vec::new();
+    tags.push(ptags);
+    tags.push(etags);
+    tags.push(bolt11);
+    tags.push(payment_secret);
+    tags.push(description);
 
-    let mut zap_note = json!({
-        "kind": 9735,
+    let zap_note = json!({
+        "id": id,
         "pubkey": pubkey,
         "created_at": settle_date,
-        "id": id,
-        "tags": [],
+        "kind": 9735,
+        "tags": tags,
         "content": content,
         "sig": sig
     });
 
-    println!("ptags are :  {:?}", ptags);
-    zap_note["tags"].as_array_mut().unwrap().push(ptags.into());
-    zap_note["tags"].as_array_mut().unwrap().push(etags.into());
-    zap_note["tags"].as_array_mut().unwrap().push(bolt11.into());
-    zap_note["tags"]
-        .as_array_mut()
-        .unwrap()
-        .push(payment_secret.into());
-    zap_note["tags"]
-        .as_array_mut()
-        .unwrap()
-        .push(description.into());
-
     let publish_message =
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
 
-    println!("zap note to be published:  {:?}", publish_message);
+    let publish_relay_event = serde_json::to_string(&vec!["EVENT", &publish_message]).unwrap();
+
+    println!("zap note to be published:  {:?}", publish_relay_event);
 
     tokio::spawn(async move {
         publish(relays, publish_message).await;
@@ -113,7 +108,6 @@ pub fn publish_zap_to_relays(
 }
 
 async fn publish(relays: Vec<String>, publish_message: String) {
-    println!("{:?}", relays);
     for relay in relays {
         let (host, port) = match relay.split_once("://") {
             Some((_, addr)) => match addr.split_once(":") {
@@ -143,7 +137,7 @@ async fn publish(relays: Vec<String>, publish_message: String) {
 
         // Send the message over the WebSocket connection
         if let Err(err) = websocket
-            .send(SocketMessage::Text(publish_message.to_string()))
+            .send(SocketMessage::Text(publish_message.clone()))
             .await
         {
             println!("Failed to send message to relay {:?}: {:?}", relay, err);
