@@ -77,7 +77,6 @@ pub fn publish_zap_to_relays(
         comment.to_string()
     };
 
-    let sig = sign_message(privkey, &zap_request_json.id);
     let mut tags = Vec::new();
     tags.push(ptags);
     tags.push(etags);
@@ -86,6 +85,7 @@ pub fn publish_zap_to_relays(
     tags.push(description);
 
     let id = final_calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
+    let sig = sign_message(privkey, &id);
 
     let zap_note = json!([
         "EVENT",
