@@ -1,5 +1,4 @@
 use hyper::{Body, Response, StatusCode};
-// use ring::digest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -232,7 +231,7 @@ pub fn handle_response_body() -> String {
     };
 
     if !pubkey.is_empty() {
-        response_body["allowNostr"] = serde_json::Value::Bool(true);
+        response_body["allowsNostr"] = serde_json::Value::Bool(true);
         response_body["nostrPubkey"] = serde_json::Value::String(pubkey);
     }
 
@@ -246,7 +245,7 @@ pub fn get_digest(nostr: &ZapRequest) -> Vec<u8> {
     let mut hasher = Sha256::new();
 
     let nostr_note = serde_json::to_string(&nostr);
-    println!("{:?}", nostr_note);
+
     let (domain, username) = get_identifiers();
 
     let identifier = format!("{}@{}", username, domain);
@@ -263,10 +262,8 @@ pub fn get_digest(nostr: &ZapRequest) -> Vec<u8> {
         nostr_note.unwrap()
     };
 
-    // let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
-    //     .as_ref()
-    //     .to_vec();
     hasher.update(metadata.as_bytes());
+
     let digest = hasher.finalize().to_vec();
 
     return digest;
@@ -284,10 +281,6 @@ pub fn get_default_digest() -> Vec<u8> {
         ["text/plain", &format!("Paying satoshis to {}", identifier)],
     ])
     .expect("Failed to serialize metadata");
-
-    // let digest = digest::digest(&digest::SHA256, metadata.as_bytes())
-    //     .as_ref()
-    //     .to_vec();
 
     hasher.update(metadata.as_bytes());
     let digest = hasher.finalize().to_vec();
