@@ -1,9 +1,8 @@
-use std::vec;
-
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures_util::sink::SinkExt;
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
+use std::vec;
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
 
@@ -100,8 +99,6 @@ pub fn publish_zap_to_relays(
     let publish_message =
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
 
-    println!("zap note to be published:  {:?}", zap_note);
-
     tokio::spawn(async move {
         publish(relays, publish_message).await;
     });
@@ -125,8 +122,8 @@ async fn publish(relays: Vec<String>, publish_message: String) {
 
         // Connect to the url and call the closure
         // Connect to the WebSocket URL and send the message
-        let (mut websocket, _) = match connect_async(uri).await {
-            Ok((websocket, _)) => (websocket, ()),
+        let (mut websocket_stream, _) = match connect_async(uri).await {
+            Ok((websocket_stream, res)) => (websocket_stream, res),
             Err(err) => {
                 println!("Failed to connect to relay {:?}: {:?}", relay, err);
                 continue;
@@ -136,7 +133,7 @@ async fn publish(relays: Vec<String>, publish_message: String) {
         println!("Connected to {:?}", relay);
 
         // Send the message over the WebSocket connection
-        if let Err(err) = websocket
+        if let Err(err) = websocket_stream
             .send(SocketMessage::Text(publish_message.clone()))
             .await
         {
