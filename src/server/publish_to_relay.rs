@@ -18,16 +18,6 @@ fn sign_message(privkey: String, message: &str) -> String {
     let pair = KeyPair::from_seckey_slice(&secp, &secret_key.secret_bytes())
         .expect("Failed to generate keypair from secret key");
 
-    let public_key = PublicKey::from_secret_key(&secp, &secret_key)
-        .serialize()
-        .to_vec();
-
-    println!(
-        "Public Key while signing is: {:?}, xpub while signing is: {:?}",
-        hex::encode(&public_key),
-        hex::encode(&xpub.serialize())
-    );
-
     let message =
         Message::from_slice(&hex::decode(message).expect("UnableToDecodeHexMessageForSigning"))
             .expect("FailedToConvertHexMessageToBytes");
@@ -46,8 +36,6 @@ pub fn publish_zap_to_relays(
     preimage: Vec<u8>,
     settle_date: i64,
 ) {
-    println!("settle date is {}", settle_date);
-
     let decoded_preimage = hex::encode(preimage);
     let (privkey, pubkey) = get_nostr_keys().unwrap();
     let zap_request_string = serde_json::to_string::<ZapRequest>(&zap_request_json)
@@ -99,11 +87,6 @@ pub fn publish_zap_to_relays(
         "sig": sig
     }]);
 
-    println!(
-        "zap id is: {:?}  calculated id is: {:?}",
-        zap_request_json.id, id
-    );
-
     let publish_message =
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
 
@@ -116,10 +99,7 @@ async fn publish(relays: Vec<String>, publish_message: String) {
     for relay in relays {
         let (host, port) = match relay.split_once("://") {
             Some((_, addr)) => match addr.split_once(":") {
-                Some((host, port)) => {
-                    println!("{:?}, {:?}", host, port);
-                    (host, port)
-                }
+                Some((host, port)) => (host, port),
                 None => (addr, "443"),
             },
             None => continue,
@@ -136,13 +116,12 @@ async fn publish(relays: Vec<String>, publish_message: String) {
             }
         };
 
-        println!("Connected to {:?}", relay);
+        let result = socket.write_message(SocketMessage::Text(publish_message.clone()));
 
-        socket
-            .write_message(SocketMessage::Text(publish_message.clone()))
-            .expect("FailedToWriteToWebSocket");
-
-        println!("Sent message to {:?}", relay);
+        match result {
+            Ok(_) => println!("Sent message to {:?}", relay),
+            Err(_) => println!("Failed to send message to relay {:?}", relay),
+        }
 
         socket.close(None).expect("FailedToCloseSocketConnection");
     }

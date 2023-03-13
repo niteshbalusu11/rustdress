@@ -72,8 +72,6 @@ pub fn get_nostr_keys() -> Result<(String, String), String> {
     let pubkey_bytes = private_key_to_public_key(&privkey_bytes);
     let pubkey_hex = hex::encode(&pubkey_bytes);
 
-    println!("Public Key is: {:?}", pubkey_hex);
-
     Ok((privkey, pubkey_hex))
 }
 
