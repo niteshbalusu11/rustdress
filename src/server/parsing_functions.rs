@@ -181,6 +181,7 @@ pub fn event_commitment(ev: &ZapRequest) -> String {
     let content = ev.content.clone();
 
     let commitment = json!([0, pubkey, created_at, kind, tags, content]);
+
     serde_json::to_string(&commitment).unwrap()
 }
 

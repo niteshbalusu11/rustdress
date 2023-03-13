@@ -83,9 +83,9 @@ fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
     let mut serialized = public_key.serialize().to_vec();
-    if serialized[0] == 0x02 {
-        serialized.remove(0);
-    }
+
+    serialized.remove(0);
+
     return serialized;
 }
 

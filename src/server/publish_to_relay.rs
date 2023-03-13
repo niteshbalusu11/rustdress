@@ -85,7 +85,9 @@ pub fn publish_zap_to_relays(
     tags.push(payment_secret);
     tags.push(description);
 
-    let zap_note = json!({
+    let zap_note = json!([
+        "EVENT",
+        {
         "id": id,
         "pubkey": pubkey,
         "created_at": settle_date,
@@ -93,14 +95,12 @@ pub fn publish_zap_to_relays(
         "tags": tags,
         "content": content,
         "sig": sig
-    });
+    }]);
 
     let publish_message =
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
 
-    let publish_relay_event = serde_json::to_string(&vec!["EVENT", &publish_message]).unwrap();
-
-    println!("zap note to be published:  {:?}", publish_relay_event);
+    println!("zap note to be published:  {:?}", zap_note);
 
     tokio::spawn(async move {
         publish(relays, publish_message).await;
