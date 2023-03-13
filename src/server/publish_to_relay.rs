@@ -4,7 +4,7 @@ use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
 use tokio_tungstenite::connect_async;
-use tungstenite::Message as SocketMessage;
+use tungstenite::{connect, Message as SocketMessage};
 
 use super::parsing_functions::{calculate_id, ZapRequest};
 
@@ -122,7 +122,7 @@ async fn publish(relays: Vec<String>, publish_message: String) {
 
         // Connect to the url and call the closure
         // Connect to the WebSocket URL and send the message
-        let (mut websocket_stream, _) = match connect_async(uri).await {
+        let (mut socket, _) = match connect(uri) {
             Ok((websocket_stream, res)) => (websocket_stream, res),
             Err(err) => {
                 println!("Failed to connect to relay {:?}: {:?}", relay, err);
@@ -132,15 +132,26 @@ async fn publish(relays: Vec<String>, publish_message: String) {
 
         println!("Connected to {:?}", relay);
 
-        // Send the message over the WebSocket connection
-        if let Err(err) = websocket_stream
-            .send(SocketMessage::Text(publish_message.clone()))
-            .await
-        {
-            println!("Failed to send message to relay {:?}: {:?}", relay, err);
-            continue;
-        }
+        socket
+            .write_message(SocketMessage::Text(publish_message.clone()))
+            .expect("FailedToWriteToWebSocket");
 
         println!("Sent message to {:?}", relay);
+
+        loop {
+            let msg = socket.read_message().expect("Error reading message");
+            println!("Received: {}", msg);
+            break;
+        }
+
+        socket.close(None).expect("FailedToCloseSocketConnection");
+        // Send the message over the WebSocket connection
+        // if let Err(err) = websocket_stream
+        //     .send(SocketMessage::Text(publish_message.clone()))
+        //     .await
+        // {
+        //     println!("Failed to send message to relay {:?}: {:?}", relay, err);
+        //     continue;
+        // }
     }
 }
