@@ -1,4 +1,4 @@
-use crate::server::utils::bech32_encode;
+use crate::server::{parsing_functions::get_default_digest, utils::bech32_encode};
 use http::uri::Uri;
 use hyper::{http, Body, Request, Response};
 use serde_json::json;
@@ -77,8 +77,8 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                 let digest: Vec<u8>;
 
                 match parsed_nostr_query {
-                    Ok(ref decoded_query) => digest = get_digest(decoded_query.to_string()),
-                    Err(_) => digest = get_digest("".to_string()),
+                    Ok(ref decoded_query) => digest = get_digest(decoded_query),
+                    Err(_) => digest = get_default_digest(),
                 }
 
                 let amount = match parse_amount_query(amount_key.cloned()) {

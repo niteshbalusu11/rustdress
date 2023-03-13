@@ -9,7 +9,7 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use crate::credentials::get_lnd::get_lnd;
 
-use super::publish_to_relay::publish_zap_to_relays;
+use super::{parsing_functions::ZapRequest, publish_to_relay::publish_zap_to_relays};
 
 pub fn get_identifiers() -> (String, String) {
     dotenv().ok();
@@ -93,7 +93,7 @@ pub async fn create_invoice(
     digest: Vec<u8>,
     comment: String,
     amount: i64,
-    nostr_query: Result<String, String>,
+    nostr_query: Result<ZapRequest, String>,
 ) -> String {
     let mut lnd = get_lnd().await;
 
@@ -127,7 +127,12 @@ pub async fn create_invoice(
     invoice_result.payment_request
 }
 
-async fn watch_invoice(zap_request: String, mut lnd: LndClient, r_hash: &Vec<u8>, comment: &str) {
+async fn watch_invoice(
+    zap_request: ZapRequest,
+    mut lnd: LndClient,
+    r_hash: &Vec<u8>,
+    comment: &str,
+) {
     let mut invoice_subscription = lnd
         .invoices()
         .subscribe_single_invoice(SubscribeSingleInvoiceRequest {

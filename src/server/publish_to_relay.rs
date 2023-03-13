@@ -1,12 +1,13 @@
-use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
-use futures_util::sink::SinkExt;
+use crate::server::{
+    parsing_functions::{final_calculate_id, get_tags},
+    utils::get_nostr_keys,
+};
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
-use tokio_tungstenite::connect_async;
 use tungstenite::{connect, Message as SocketMessage};
 
-use super::parsing_functions::{calculate_id, ZapRequest};
+use super::parsing_functions::ZapRequest;
 
 fn sign_message(privkey: String, message: &str) -> String {
     let secp = Secp256k1::new();
@@ -39,18 +40,18 @@ fn sign_message(privkey: String, message: &str) -> String {
 }
 
 pub fn publish_zap_to_relays(
-    zap_request: String,
+    zap_request_json: ZapRequest,
     comment: &str,
     payment_request: String,
     preimage: Vec<u8>,
     settle_date: i64,
 ) {
+    println!("settle date is {}", settle_date);
+
     let decoded_preimage = hex::encode(preimage);
     let (privkey, pubkey) = get_nostr_keys().unwrap();
-    let zap_request_json = serde_json::from_str::<ZapRequest>(&zap_request)
+    let zap_request_string = serde_json::to_string::<ZapRequest>(&zap_request_json)
         .expect("FailedToParseZapRequestForPublishingToRelays");
-
-    let id = calculate_id(&zap_request_json);
 
     let relays = get_tags(&zap_request_json.tags, "relays")
         .expect("FailedToParseE-TagsForPublishingToRelays");
@@ -66,7 +67,7 @@ pub fn publish_zap_to_relays(
 
     let bolt11 = vec!["bolt11", &payment_request];
 
-    let description = vec!["description", &zap_request];
+    let description = vec!["description", &zap_request_string];
 
     let payment_secret = vec!["preimage", &decoded_preimage];
 
@@ -84,6 +85,8 @@ pub fn publish_zap_to_relays(
     tags.push(payment_secret);
     tags.push(description);
 
+    let id = final_calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
+
     let zap_note = json!([
         "EVENT",
         {
@@ -95,6 +98,11 @@ pub fn publish_zap_to_relays(
         "content": content,
         "sig": sig
     }]);
+
+    println!(
+        "zap id is: {:?}  calculated id is: {:?}",
+        zap_request_json.id, id
+    );
 
     let publish_message =
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
@@ -117,8 +125,6 @@ async fn publish(relays: Vec<String>, publish_message: String) {
             None => continue,
         };
         let uri = format!("wss://{}:{}/", host, port);
-
-        println!("{:?}", uri);
 
         // Connect to the url and call the closure
         // Connect to the WebSocket URL and send the message
