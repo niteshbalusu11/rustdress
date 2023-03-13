@@ -77,7 +77,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                 let digest: Vec<u8>;
 
                 match parsed_nostr_query {
-                    Ok(ref decoded_query) => digest = get_digest(decoded_query),
+                    Ok(_) => digest = get_digest(nostr_key),
                     Err(_) => digest = get_default_digest(),
                 }
 
