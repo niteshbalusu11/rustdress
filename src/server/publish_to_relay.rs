@@ -144,20 +144,6 @@ async fn publish(relays: Vec<String>, publish_message: String) {
 
         println!("Sent message to {:?}", relay);
 
-        loop {
-            let msg = socket.read_message().expect("Error reading message");
-            println!("Received: {}", msg);
-            break;
-        }
-
         socket.close(None).expect("FailedToCloseSocketConnection");
-        // Send the message over the WebSocket connection
-        // if let Err(err) = websocket_stream
-        //     .send(SocketMessage::Text(publish_message.clone()))
-        //     .await
-        // {
-        //     println!("Failed to send message to relay {:?}: {:?}", relay, err);
-        //     continue;
-        // }
     }
 }
