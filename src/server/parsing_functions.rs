@@ -131,7 +131,16 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, St
                         return Err("MissingRelaysInZapRequest".to_string());
                     }
 
-                    if calculate_id(&p) != p.id {
+                    let id = calculate_id(json!([
+                        0,
+                        p.pubkey,
+                        p.created_at,
+                        p.kind,
+                        p.tags,
+                        p.content,
+                    ]));
+
+                    if id != p.id {
                         return Err("InvalidZapRequestId".to_string());
                     }
 
@@ -172,27 +181,7 @@ pub fn get_tags(tags: &Vec<Vec<String>>, key: &str) -> Option<Vec<String>> {
     }
 }
 
-pub fn event_commitment(ev: &ZapRequest) -> String {
-    let pubkey = ev.pubkey.clone();
-    let created_at = ev.created_at;
-    let kind = ev.kind;
-    let tags = ev.tags.clone();
-    let content = ev.content.clone();
-
-    let commitment = json!([0, pubkey, created_at, kind, tags, content]);
-
-    serde_json::to_string(&commitment).unwrap()
-}
-
-pub fn calculate_id(ev: &ZapRequest) -> String {
-    let commitment = event_commitment(&ev);
-    let mut hasher = Sha256::new();
-    hasher.update(commitment.as_bytes());
-    let hash = hasher.finalize();
-    hex::encode(hash)
-}
-
-pub fn final_calculate_id(commitment: Value) -> String {
+pub fn calculate_id(commitment: Value) -> String {
     let commitment_string =
         serde_json::to_string(&commitment).expect("Failed to serialize response body to JSON");
 
@@ -241,10 +230,8 @@ pub fn handle_response_body() -> String {
     return response_body_string;
 }
 
-pub fn get_digest(nostr: &ZapRequest) -> Vec<u8> {
+pub fn get_digest(nostr: Option<&ZapRequest>) -> Vec<u8> {
     let mut hasher = Sha256::new();
-
-    let nostr_note = serde_json::to_string(&nostr);
 
     let (domain, username) = get_identifiers();
 
@@ -256,34 +243,13 @@ pub fn get_digest(nostr: &ZapRequest) -> Vec<u8> {
     ])
     .expect("Failed to serialize metadata");
 
-    let metadata = if nostr_note.is_err() {
+    let metadata = if nostr.is_none() {
         default_metadata
     } else {
-        nostr_note.unwrap()
+        serde_json::to_string(&Some(nostr.unwrap())).unwrap_or(default_metadata)
     };
 
     hasher.update(metadata.as_bytes());
 
-    let digest = hasher.finalize().to_vec();
-
-    return digest;
-}
-
-pub fn get_default_digest() -> Vec<u8> {
-    let mut hasher = Sha256::new();
-
-    let (domain, username) = get_identifiers();
-
-    let identifier = format!("{}@{}", username, domain);
-
-    let metadata = serde_json::to_string(&[
-        ["text/identifier", &identifier],
-        ["text/plain", &format!("Paying satoshis to {}", identifier)],
-    ])
-    .expect("Failed to serialize metadata");
-
-    hasher.update(metadata.as_bytes());
-    let digest = hasher.finalize().to_vec();
-
-    return digest;
+    hasher.finalize().to_vec()
 }
