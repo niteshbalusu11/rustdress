@@ -135,7 +135,7 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, St
                         0,
                         p.pubkey,
                         p.created_at,
-                        9735,
+                        p.kind,
                         p.tags,
                         p.content,
                     ]));
