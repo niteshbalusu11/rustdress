@@ -131,7 +131,7 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, St
                         return Err("MissingRelaysInZapRequest".to_string());
                     }
 
-                    let id = final_calculate_id(json!([
+                    let id = calculate_id(json!([
                         0,
                         p.pubkey,
                         p.created_at,
@@ -181,27 +181,7 @@ pub fn get_tags(tags: &Vec<Vec<String>>, key: &str) -> Option<Vec<String>> {
     }
 }
 
-// pub fn event_commitment(ev: &ZapRequest) -> String {
-//     let pubkey = ev.pubkey.clone();
-//     let created_at = ev.created_at;
-//     let kind = ev.kind;
-//     let tags = ev.tags.clone();
-//     let content = ev.content.clone();
-
-//     let commitment = json!([0, pubkey, created_at, kind, tags, content]);
-
-//     serde_json::to_string(&commitment).unwrap()
-// }
-
-// pub fn calculate_id(ev: &ZapRequest) -> String {
-//     let commitment = event_commitment(&ev);
-//     let mut hasher = Sha256::new();
-//     hasher.update(commitment.as_bytes());
-//     let hash = hasher.finalize();
-//     hex::encode(hash)
-// }
-
-pub fn final_calculate_id(commitment: Value) -> String {
+pub fn calculate_id(commitment: Value) -> String {
     let commitment_string =
         serde_json::to_string(&commitment).expect("Failed to serialize response body to JSON");
 
