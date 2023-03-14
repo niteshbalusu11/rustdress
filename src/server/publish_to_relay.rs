@@ -1,8 +1,10 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
+use futures::{future::join_all, SinkExt};
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
-use tungstenite::{connect, Message as SocketMessage};
+use tokio_tungstenite::connect_async;
+use tungstenite::Message as SocketMessage;
 
 use super::parsing_functions::{calculate_id, ZapRequest};
 
@@ -92,7 +94,41 @@ pub fn publish_zap_to_relays(
     });
 }
 
+// async fn publish(relays: Vec<String>, publish_message: String) {
+//     for relay in relays {
+//         let (host, port) = match relay.split_once("://") {
+//             Some((_, addr)) => match addr.split_once(":") {
+//                 Some((host, port)) => (host, port),
+//                 None => (addr, "443"),
+//             },
+//             None => continue,
+//         };
+//         let uri = format!("wss://{}:{}/", host, port);
+
+//         // Connect to the url and call the closure
+//         // Connect to the WebSocket URL and send the message
+//         let (mut socket, _) = match connect(uri) {
+//             Ok((websocket_stream, res)) => (websocket_stream, res),
+//             Err(err) => {
+//                 println!("Failed to connect to relay {:?}: {:?}", relay, err);
+//                 continue;
+//             }
+//         };
+
+//         let result = socket.write_message(SocketMessage::Text(publish_message.clone()));
+
+//         match result {
+//             Ok(_) => println!("Sent message to {:?}", relay),
+//             Err(_) => println!("Failed to send message to relay {:?}", relay),
+//         }
+
+//         socket.close(None).expect("FailedToCloseSocketConnection");
+//     }
+// }
+
 async fn publish(relays: Vec<String>, publish_message: String) {
+    let mut futures = vec![];
+
     for relay in relays {
         let (host, port) = match relay.split_once("://") {
             Some((_, addr)) => match addr.split_once(":") {
@@ -101,25 +137,37 @@ async fn publish(relays: Vec<String>, publish_message: String) {
             },
             None => continue,
         };
+
         let uri = format!("wss://{}:{}/", host, port);
+        let future = send_message(uri, publish_message.clone());
+        futures.push(future);
+    }
 
-        // Connect to the url and call the closure
-        // Connect to the WebSocket URL and send the message
-        let (mut socket, _) = match connect(uri) {
-            Ok((websocket_stream, res)) => (websocket_stream, res),
-            Err(err) => {
-                println!("Failed to connect to relay {:?}: {:?}", relay, err);
-                continue;
-            }
-        };
+    let results = join_all(futures).await;
 
-        let result = socket.write_message(SocketMessage::Text(publish_message.clone()));
+    // Handle any errors that occurred
+    for (_index, _result) in results.into_iter().enumerate() {}
+}
 
-        match result {
-            Ok(_) => println!("Sent message to {:?}", relay),
-            Err(_) => println!("Failed to send message to relay {:?}", relay),
+async fn send_message(uri: String, message: String) -> Result<(), ()> {
+    let (mut socket, _) = match connect_async(uri.clone()).await {
+        Ok((websocket_stream, res)) => (websocket_stream, res),
+        Err(err) => {
+            println!("Failed to connect to URI {:?}: {:?}", uri, err);
+            return Err(());
         }
+    };
 
-        socket.close(None).expect("FailedToCloseSocketConnection");
+    match socket.send(SocketMessage::Text(message)).await {
+        Ok(_) => println!("Sent message to {:?}", uri),
+        Err(_) => println!("Failed to send message to {:?}", uri),
+    }
+
+    match socket.close(None).await {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            println!("Failed to close socket connection for {:?}", uri);
+            Err(())
+        }
     }
 }
