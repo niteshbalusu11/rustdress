@@ -94,38 +94,6 @@ pub fn publish_zap_to_relays(
     });
 }
 
-// async fn publish(relays: Vec<String>, publish_message: String) {
-//     for relay in relays {
-//         let (host, port) = match relay.split_once("://") {
-//             Some((_, addr)) => match addr.split_once(":") {
-//                 Some((host, port)) => (host, port),
-//                 None => (addr, "443"),
-//             },
-//             None => continue,
-//         };
-//         let uri = format!("wss://{}:{}/", host, port);
-
-//         // Connect to the url and call the closure
-//         // Connect to the WebSocket URL and send the message
-//         let (mut socket, _) = match connect(uri) {
-//             Ok((websocket_stream, res)) => (websocket_stream, res),
-//             Err(err) => {
-//                 println!("Failed to connect to relay {:?}: {:?}", relay, err);
-//                 continue;
-//             }
-//         };
-
-//         let result = socket.write_message(SocketMessage::Text(publish_message.clone()));
-
-//         match result {
-//             Ok(_) => println!("Sent message to {:?}", relay),
-//             Err(_) => println!("Failed to send message to relay {:?}", relay),
-//         }
-
-//         socket.close(None).expect("FailedToCloseSocketConnection");
-//     }
-// }
-
 async fn publish(relays: Vec<String>, publish_message: String) {
     let mut futures = vec![];
 
