@@ -1,13 +1,10 @@
-use crate::server::{
-    parsing_functions::{final_calculate_id, get_tags},
-    utils::get_nostr_keys,
-};
+use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
 use tungstenite::{connect, Message as SocketMessage};
 
-use super::parsing_functions::ZapRequest;
+use super::parsing_functions::{calculate_id, ZapRequest};
 
 fn sign_message(privkey: String, message: &str) -> String {
     let secp = Secp256k1::new();
@@ -72,7 +69,7 @@ pub fn publish_zap_to_relays(
     tags.push(payment_secret);
     tags.push(description);
 
-    let id = final_calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
+    let id = calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
     let sig = sign_message(privkey, &id);
 
     let zap_note = json!([
