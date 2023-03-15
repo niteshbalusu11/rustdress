@@ -6,9 +6,9 @@ use serde_json::json;
 use super::{
     parsing_functions::{
         find_key, get_digest, handle_bad_request, handle_ok_request, handle_response_body,
-        parse_amount_query, parse_comment_query, parse_nostr_query,
+        parse_amount_query, parse_comment_query, parse_name_query, parse_nostr_query,
     },
-    utils::{create_invoice, get_identifiers},
+    utils::{create_invoice, get_identifiers, get_nostr_keys},
 };
 
 pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
@@ -19,6 +19,10 @@ pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper:
 
         (&hyper::Method::GET, path) if path.starts_with("/.well-known/lnurlp/") => {
             return handle_invoice_path(path, req.uri()).await
+        }
+
+        (&hyper::Method::GET, path) if path.starts_with("/.well-known/nostr.json") => {
+            return handle_nip05_path(req.uri()).await
         }
         // Return 404 Not Found for any other requests
         _ => return handle_unknown_path(),
@@ -114,5 +118,74 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
             }
         }
         _ => return handle_bad_request("Username Not Found"),
+    }
+}
+
+async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
+    let pubkey = match get_nostr_keys() {
+        Ok((_, key)) => key,
+        Err(_) => return handle_bad_request("Failed To Get Nostr Keys"),
+    };
+
+    let relays = vec![
+        "wss://nostr.foundrydigital.com",
+        "wss://eden.nostr.land",
+        "wss://relay.damus.io",
+        "wss://relay.snort.social",
+        "wss://nos.lol",
+        "wss://relay.current.fyi",
+        "wss://relay.nostr.info",
+        "wss://nostr.zebedee.cloud",
+        "wss://nostr.fmt.wiz.biz",
+        "wss://relay.nostr.bg",
+        "wss://nostr.mom",
+        "wss://nostr.bitcoiner.social",
+        "wss://nostr.oxtr.dev",
+        "wss://no.str.cr",
+    ];
+
+    let relay_string: Vec<String> = relays.iter().map(|s| s.to_string()).collect();
+
+    if let Some(query_str) = uri.query() {
+        let query_pairs: Vec<(String, String)> = query_str
+            .split('&')
+            .map(|kv| {
+                let mut iter = kv.split('=');
+                let key = iter.next().unwrap().to_string();
+                let value = iter.next().unwrap_or("").to_string();
+                (key, value)
+            })
+            .collect();
+
+        let name_key = find_key("name", &query_pairs);
+
+        let name = match parse_name_query(name_key.cloned()) {
+            Ok(c) => c,
+            Err(_) => {
+                return handle_bad_request("FailedToParseComments");
+            }
+        };
+
+        let username = std::env::var("USERNAME").unwrap();
+
+        if name != username {
+            return handle_bad_request("Username Not Found");
+        }
+
+        let response_body = json!({
+          "names": {
+            name: pubkey,
+          },
+          "relays": {
+            pubkey: relay_string,
+          }
+        });
+
+        let response_body_string = serde_json::to_string(&response_body)
+            .expect("Failed to serialize response body to JSON");
+
+        return handle_ok_request(response_body_string);
+    } else {
+        return handle_bad_request("Query Not Found");
     }
 }

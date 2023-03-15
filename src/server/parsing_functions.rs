@@ -84,6 +84,16 @@ pub fn parse_comment_query(key: Option<(String, String)>) -> Result<String, Stri
     }
 }
 
+pub fn parse_name_query(key: Option<(String, String)>) -> Result<String, String> {
+    match key {
+        Some((_, comment)) => {
+            return Ok(comment);
+        }
+
+        None => Err("".to_string()),
+    }
+}
+
 pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, String> {
     match key {
         Some((_, nostr)) => {
