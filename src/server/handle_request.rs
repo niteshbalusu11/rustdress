@@ -175,10 +175,10 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
 
         let response_body = json!({
           "names": {
-            name: pubkey,
+            name: "021d7ef7aafc034a8fefba4de07622d78fd369df1e5f9dd7d41dc2cffa74ae02",
           },
           "relays": {
-            pubkey: relay_string,
+            "021d7ef7aafc034a8fefba4de07622d78fd369df1e5f9dd7d41dc2cffa74ae02": relay_string,
           }
         });
 
