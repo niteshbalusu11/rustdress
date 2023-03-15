@@ -122,6 +122,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 }
 
 async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
+    println!("inside nip05 {:?}", uri);
     let pubkey = match get_nostr_keys() {
         Ok((_, key)) => key,
         Err(_) => return handle_bad_request("Failed To Get Nostr Keys"),
