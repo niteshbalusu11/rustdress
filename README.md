@@ -1,5 +1,5 @@
 # RustDress
-Self hosted Lightning Address Server
+Self hosted Lightning Address Server and NIP-05 Verification Server
 
 Pre-requisites:
 You will need rust installed.
