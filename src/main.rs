@@ -1,5 +1,5 @@
 use credentials::get_lnd::{get_lnd, test_invoice};
-use server::start_server::start_server;
+use server::{start_server::start_server, utils::nip05_broadcast};
 mod server;
 
 mod credentials;
@@ -24,6 +24,8 @@ async fn main() {
 
     let lnd = get_lnd().await;
     test_invoice(lnd).await;
+
+    nip05_broadcast(domain.unwrap(), username.unwrap()).await;
 
     start_server().await;
 }
