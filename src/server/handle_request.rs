@@ -1,4 +1,4 @@
-use crate::server::utils::bech32_encode;
+use crate::server::{constants::CONSTANTS, utils::bech32_encode};
 use http::uri::Uri;
 use hyper::{http, Body, Request, Response};
 use serde_json::json;
@@ -8,7 +8,7 @@ use super::{
         find_key, get_digest, handle_bad_request, handle_ok_request, handle_response_body,
         parse_amount_query, parse_comment_query, parse_name_query, parse_nostr_query,
     },
-    utils::{create_invoice, get_identifiers, get_nostr_keys},
+    utils::{create_invoice, get_identifiers},
 };
 
 pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
@@ -122,30 +122,12 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 }
 
 async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
-    println!("inside nip05 {:?}", uri);
-    let pubkey = match get_nostr_keys() {
-        Ok((_, key)) => key,
+    let pubkey = match std::env::var("NIP_05_PUBKEY") {
+        Ok(key) => key,
         Err(_) => return handle_bad_request("Failed To Get Nostr Keys"),
     };
 
-    let relays = vec![
-        "wss://nostr.foundrydigital.com",
-        "wss://eden.nostr.land",
-        "wss://relay.damus.io",
-        "wss://relay.snort.social",
-        "wss://nos.lol",
-        "wss://relay.current.fyi",
-        "wss://relay.nostr.info",
-        "wss://nostr.zebedee.cloud",
-        "wss://nostr.fmt.wiz.biz",
-        "wss://relay.nostr.bg",
-        "wss://nostr.mom",
-        "wss://nostr.bitcoiner.social",
-        "wss://nostr.oxtr.dev",
-        "wss://no.str.cr",
-    ];
-
-    let relay_string: Vec<String> = relays.iter().map(|s| s.to_string()).collect();
+    let relays = CONSTANTS.relays.clone();
 
     if let Some(query_str) = uri.query() {
         let query_pairs: Vec<(String, String)> = query_str
@@ -175,10 +157,10 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
 
         let response_body = json!({
           "names": {
-            name: "021d7ef7aafc034a8fefba4de07622d78fd369df1e5f9dd7d41dc2cffa74ae02",
+            name: pubkey,
           },
           "relays": {
-            "021d7ef7aafc034a8fefba4de07622d78fd369df1e5f9dd7d41dc2cffa74ae02": relay_string,
+            pubkey: relays,
           }
         });
 

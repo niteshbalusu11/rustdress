@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use bech32::{encode, ToBase32, Variant};
 use dotenv::dotenv;
 use lnd_grpc_rust::{
@@ -6,8 +8,16 @@ use lnd_grpc_rust::{
     LndClient,
 };
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use serde_json::json;
 
-use crate::credentials::get_lnd::get_lnd;
+use crate::{
+    credentials::get_lnd::get_lnd,
+    server::{
+        constants::CONSTANTS,
+        parsing_functions::calculate_id,
+        publish_to_relay::{publish, sign_message},
+    },
+};
 
 use super::{parsing_functions::ZapRequest, publish_to_relay::publish_zap_to_relays};
 
@@ -163,4 +173,47 @@ async fn watch_invoice(
             }
         }
     }
+}
+
+pub async fn nip05_broadcast(domain: String, username: String) {
+    match get_nostr_keys() {
+        Ok((privkey, pubkey)) => {
+            let relays = CONSTANTS.relays;
+
+            let content = format!(
+                "{{\"name\": \"{}\", \"nip05\": \"{}@{}\"}}",
+                username, username, domain
+            );
+
+            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+            let timestamp = current_time.as_secs();
+
+            let id = calculate_id(json!([0, pubkey, timestamp, 0, [], content]));
+
+            let nip05_json = json!([
+                "EVENT",
+                {
+                    "content": content,
+                    "created_at": timestamp,
+                    "id": id,
+                    "kind": 0,
+                    "pubkey": pubkey,
+                    "tags": [],
+                    "sig": sign_message(privkey, &id)
+                },
+            ]);
+
+            let relay_string: Vec<String> = relays.iter().map(|s| s.to_string()).collect();
+
+            let publish_message = serde_json::to_string(&nip05_json)
+                .expect("Failed to serialize response body to JSON");
+
+            tokio::spawn(async move {
+                publish(relay_string, publish_message).await;
+            });
+
+            pubkey
+        }
+        Err(_) => "".to_string(),
+    };
 }
