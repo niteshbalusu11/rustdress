@@ -1,5 +1,5 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
-use futures::{future::join_all, SinkExt};
+use futures::{future::join_all, SinkExt, StreamExt};
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
@@ -128,11 +128,37 @@ async fn send_message(uri: String, message: String) -> Result<(), ()> {
 
     match socket.send(SocketMessage::Text(message)).await {
         Ok(_) => println!("Sent message to {:?}", uri),
-        Err(_) => println!("Failed to send message to {:?}", uri),
+        Err(_) => {
+            println!("Failed to send message to {:?}", uri);
+            return Err(());
+        }
+    }
+
+    while let Some(result) = socket.next().await {
+        match result {
+            Ok(msg) => {
+                match msg {
+                    SocketMessage::Text(text) => {
+                        println!("Received message from {:?}: {:?}", uri, text);
+                        break; // exit the loop after receiving a message
+                    }
+                    _ => {
+                        println!("Received non-text message from {:?}: {:?}", uri, msg);
+                    }
+                }
+            }
+            Err(err) => {
+                println!("Error receiving message from {:?}: {:?}", uri, err);
+                return Err(());
+            }
+        }
     }
 
     match socket.close(None).await {
-        Ok(_) => Ok(()),
+        Ok(_) => {
+            println!("Closed socket connection for {:?}", uri);
+            Ok(())
+        }
         Err(_) => {
             println!("Failed to close socket connection for {:?}", uri);
             Err(())
