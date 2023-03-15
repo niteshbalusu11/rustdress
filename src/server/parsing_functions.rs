@@ -4,6 +4,8 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use urlencoding::decode;
 
+use crate::server::constants::CONSTANTS;
+
 use super::utils::{get_identifiers, get_nostr_keys};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -56,7 +58,7 @@ pub fn parse_amount_query(key: Option<(String, String)>) -> Result<i64, String> 
 
             match amount {
                 Ok(a) => {
-                    if a < 1000 || a > 100000000 {
+                    if a < CONSTANTS.min_sendamount || a > CONSTANTS.max_sendamount {
                         return Err("AmountOutOfRange".to_string());
                     }
 
@@ -73,7 +75,7 @@ pub fn parse_amount_query(key: Option<(String, String)>) -> Result<i64, String> 
 pub fn parse_comment_query(key: Option<(String, String)>) -> Result<String, String> {
     match key {
         Some((_, comment)) => {
-            if comment.len() > 280 {
+            if comment.len() > CONSTANTS.max_comment_length {
                 return Err("CommentCannotBeBlankOrGreaterThan50Characters".to_string());
             }
 
@@ -216,10 +218,10 @@ pub fn handle_response_body() -> String {
 
     let mut response_body = json!({
         "callback": lnurl_url,
-        "commentAllowed": 50,
-        "maxSendable": 100000000,
+        "commentAllowed": CONSTANTS.max_comment_length,
+        "maxSendable": CONSTANTS.max_sendamount,
         "metadata": metadata,
-        "minSendable": 1000,
+        "minSendable": CONSTANTS.min_sendamount,
         "tag": "payRequest",
         "status": "OK",
     });

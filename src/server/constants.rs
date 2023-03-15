@@ -1,5 +1,8 @@
 pub struct Constants {
     pub relays: [&'static str; 14],
+    pub max_comment_length: usize,
+    pub max_sendamount: i64,
+    pub min_sendamount: i64,
 }
 
 pub const CONSTANTS: Constants = Constants {
@@ -19,4 +22,7 @@ pub const CONSTANTS: Constants = Constants {
         "wss://nostr.oxtr.dev",
         "wss://no.str.cr",
     ],
+    max_comment_length: 280,
+    max_sendamount: 100000000,
+    min_sendamount: 1000,
 };
