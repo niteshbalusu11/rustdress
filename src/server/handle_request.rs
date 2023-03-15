@@ -185,6 +185,8 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
         let response_body_string = serde_json::to_string(&response_body)
             .expect("Failed to serialize response body to JSON");
 
+        println!("{:?}", response_body_string);
+
         return handle_ok_request(response_body_string);
     } else {
         return handle_bad_request("Query Not Found");
