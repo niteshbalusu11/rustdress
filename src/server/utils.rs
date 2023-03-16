@@ -19,13 +19,15 @@ use crate::{
     },
 };
 
-use super::{parsing_functions::ZapRequest, publish_to_relay::publish_zap_to_relays};
+use super::{
+    constants::EnvVariables, parsing_functions::ZapRequest, publish_to_relay::publish_zap_to_relays,
+};
 
 pub fn get_identifiers() -> (String, String) {
     dotenv().ok();
 
-    let domain = std::env::var("DOMAIN").unwrap();
-    let username = std::env::var("USERNAME").unwrap();
+    let domain = std::env::var(EnvVariables::DOMAIN).unwrap();
+    let username = std::env::var(EnvVariables::USERNAME).unwrap();
 
     return (domain, username);
 }
@@ -42,7 +44,7 @@ pub fn bech32_encode(prefix: String, data: String) -> Result<String, bech32::Err
 }
 
 pub fn add_hop_hints() -> bool {
-    let is_add_hints = std::env::var("INCLUDE_HOP_HINTS");
+    let is_add_hints = std::env::var(EnvVariables::INCLUDE_HOP_HINTS);
 
     match is_add_hints {
         Ok(add) => {
@@ -73,7 +75,7 @@ pub fn buffer_as_hex(bytes: Vec<u8>) -> String {
 pub fn get_nostr_keys() -> Result<(String, String), String> {
     dotenv::dotenv().ok();
 
-    let privkey = match std::env::var("NOSTR_PRIVATE_KEY") {
+    let privkey = match std::env::var(EnvVariables::NOSTR_PRIVATE_KEY) {
         Ok(key) => key,
         Err(_) => return Err("NostrPrivateKeyIsUndefined".to_string()),
     };

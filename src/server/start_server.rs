@@ -3,6 +3,7 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::Server;
 use std::net::Ipv4Addr;
 
+use crate::server::constants::EnvVariables;
 use crate::server::handle_request::handle_request;
 
 pub async fn start_server() {
@@ -11,7 +12,7 @@ pub async fn start_server() {
 
     dotenv().ok();
 
-    let host = match std::env::var("HOST") {
+    let host = match std::env::var(EnvVariables::HOST) {
         Ok(val) => {
             if val.is_empty() {
                 default_host
@@ -29,7 +30,7 @@ pub async fn start_server() {
         Err(_) => default_host,
     };
 
-    let port = match std::env::var("PORT") {
+    let port = match std::env::var(EnvVariables::PORT) {
         Ok(val) => {
             if val.is_empty() {
                 default_port

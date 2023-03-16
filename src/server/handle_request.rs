@@ -4,6 +4,7 @@ use hyper::{http, Body, Request, Response};
 use serde_json::json;
 
 use super::{
+    constants::EnvVariables,
     parsing_functions::{
         find_key, get_digest, handle_bad_request, handle_ok_request, handle_response_body,
         parse_amount_query, parse_comment_query, parse_name_query, parse_nostr_query,
@@ -122,7 +123,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 }
 
 async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
-    let pubkey = match std::env::var("NIP_05_PUBKEY") {
+    let pubkey = match std::env::var(EnvVariables::NIP_05_PUBKEY) {
         Ok(key) => key,
         Err(_) => return handle_bad_request("Failed To Get Nostr Keys"),
     };
@@ -149,7 +150,7 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
             }
         };
 
-        let username = std::env::var("USERNAME").unwrap();
+        let username = std::env::var(EnvVariables::USERNAME).unwrap();
 
         if name != username {
             return handle_bad_request("Username Not Found");

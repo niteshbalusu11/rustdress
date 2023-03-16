@@ -1,14 +1,14 @@
 use dotenv::dotenv;
 use std::fs;
 
-use crate::server::utils::buffer_as_hex;
+use crate::server::{constants::EnvVariables, utils::buffer_as_hex};
 
 pub fn get_cert() -> String {
     dotenv().ok();
 
     // Check if all env variables are present.
-    let cert_path = std::env::var("CERT_PATH");
-    let cert_hex = std::env::var("CERT_HEX");
+    let cert_path = std::env::var(EnvVariables::CERT_PATH);
+    let cert_hex = std::env::var(EnvVariables::CERT_HEX);
 
     // Check if macaroon_path and macaroon_hex are both empty or undefined.
     if (cert_path.is_err() || cert_path.as_ref().unwrap().is_empty())
