@@ -1,3 +1,4 @@
+use bech32::FromBase32;
 use hyper::{Body, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -264,4 +265,19 @@ pub fn get_digest(nostr: Option<&ZapRequest>) -> Vec<u8> {
     hasher.update(metadata.as_bytes());
 
     hasher.finalize().to_vec()
+}
+
+pub fn convert_key(key: &str) -> String {
+    let decoded = bech32::decode(key);
+
+    match decoded {
+        Ok((_, data, _)) => {
+            let from_base32 = match Vec::<u8>::from_base32(&data) {
+                Ok(key) => key,
+                Err(_) => return key.to_string(),
+            };
+            return hex::encode(from_base32);
+        }
+        Err(_) => key.to_string(),
+    }
 }

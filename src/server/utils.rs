@@ -20,7 +20,9 @@ use crate::{
 };
 
 use super::{
-    constants::EnvVariables, parsing_functions::ZapRequest, publish_to_relay::publish_zap_to_relays,
+    constants::EnvVariables,
+    parsing_functions::{convert_key, ZapRequest},
+    publish_to_relay::publish_zap_to_relays,
 };
 
 pub fn get_identifiers() -> (String, String) {
@@ -76,7 +78,7 @@ pub fn get_nostr_keys() -> Result<(String, String), String> {
     dotenv::dotenv().ok();
 
     let privkey = match std::env::var(EnvVariables::NOSTR_PRIVATE_KEY) {
-        Ok(key) => key,
+        Ok(key) => convert_key(&key),
         Err(_) => return Err("NostrPrivateKeyIsUndefined".to_string()),
     };
 

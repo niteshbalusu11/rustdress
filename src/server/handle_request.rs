@@ -6,8 +6,9 @@ use serde_json::json;
 use super::{
     constants::EnvVariables,
     parsing_functions::{
-        find_key, get_digest, handle_bad_request, handle_ok_request, handle_response_body,
-        parse_amount_query, parse_comment_query, parse_name_query, parse_nostr_query,
+        convert_key, find_key, get_digest, handle_bad_request, handle_ok_request,
+        handle_response_body, parse_amount_query, parse_comment_query, parse_name_query,
+        parse_nostr_query,
     },
     utils::{create_invoice, get_identifiers},
 };
@@ -124,7 +125,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 
 async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
     let pubkey = match std::env::var(EnvVariables::NIP_05_PUBKEY) {
-        Ok(key) => key,
+        Ok(key) => convert_key(&key),
         Err(_) => return handle_bad_request("Failed To Get Nostr Keys"),
     };
 
