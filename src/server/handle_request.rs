@@ -130,6 +130,19 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
     };
 
     let relays = CONSTANTS.relays.clone();
+    let username = std::env::var(EnvVariables::USERNAME).unwrap();
+
+    let default_response_body = json!({
+      "names": {
+        &username: &pubkey,
+      },
+      "relays": {
+        &pubkey: &relays,
+      }
+    });
+
+    let default_response_body_string = serde_json::to_string(&default_response_body)
+        .expect("Failed to serialize response body to JSON");
 
     if let Some(query_str) = uri.query() {
         let query_pairs: Vec<(String, String)> = query_str
@@ -147,11 +160,9 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
         let name = match parse_name_query(name_key.cloned()) {
             Ok(c) => c,
             Err(_) => {
-                return handle_bad_request("FailedToParseComments");
+                return handle_bad_request("FailedToParseName");
             }
         };
-
-        let username = std::env::var(EnvVariables::USERNAME).unwrap();
 
         if name != username {
             return handle_bad_request("Username Not Found");
@@ -171,6 +182,6 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
 
         return handle_ok_request(response_body_string);
     } else {
-        return handle_bad_request("Query Not Found");
+        return handle_ok_request(default_response_body_string);
     }
 }
