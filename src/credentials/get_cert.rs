@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use std::fs;
 
-use crate::server::{constants::EnvVariables, utils::buffer_as_hex};
+use crate::server::constants::EnvVariables;
 
 pub fn get_cert() -> String {
     dotenv().ok();
@@ -20,7 +20,7 @@ pub fn get_cert() -> String {
     if !cert_path.is_err() && !cert_path.as_ref().unwrap().is_empty() {
         let cert_bytes = fs::read(cert_path.unwrap()).expect("FailedToReadTlsCertFile");
 
-        return buffer_as_hex(cert_bytes);
+        return hex::encode(cert_bytes);
     } else {
         return cert_hex.unwrap();
     }

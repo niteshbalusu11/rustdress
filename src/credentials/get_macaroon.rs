@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use std::fs;
 
-use crate::server::{constants::EnvVariables, utils::buffer_as_hex};
+use crate::server::constants::EnvVariables;
 
 pub fn get_macaroon() -> String {
     dotenv().ok();
@@ -20,7 +20,7 @@ pub fn get_macaroon() -> String {
     if !macaroon_path.is_err() && !macaroon_path.as_ref().unwrap().is_empty() {
         let mac_bytes = fs::read(macaroon_path.unwrap()).expect("FailedToReadMacaroonFile");
 
-        return buffer_as_hex(mac_bytes);
+        return hex::encode(mac_bytes);
     } else {
         return macaroon_hex.unwrap();
     }
