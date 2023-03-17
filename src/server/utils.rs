@@ -92,11 +92,9 @@ pub fn get_nostr_keys() -> Result<(String, String), String> {
 fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
     let secp = Secp256k1::new();
     let secret_key = SecretKey::from_slice(privkey).unwrap();
-    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+    let (public_key, _) = PublicKey::from_secret_key(&secp, &secret_key).x_only_public_key();
 
-    let mut serialized = public_key.serialize().to_vec();
-
-    serialized.remove(0);
+    let serialized = public_key.serialize().to_vec();
 
     return serialized;
 }
