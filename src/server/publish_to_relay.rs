@@ -1,33 +1,12 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures::{future::join_all, SinkExt};
 use rusted_nostr_tools::event_methods::{get_event_hash, sign_event, UnsignedEvent};
-use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
 
 use super::parsing_functions::ZapRequest;
-
-pub fn sign_message(privkey: String, message: &str) -> String {
-    let secp = Secp256k1::new();
-    let secret_key =
-        SecretKey::from_slice(&hex::decode(privkey).expect("FailedToDecodeHexPrivateKey"))
-            .expect("32 bytes, within curve order");
-    let (xpub, _) = PublicKey::from_secret_key(&secp, &secret_key).x_only_public_key();
-    let pair = KeyPair::from_seckey_slice(&secp, &secret_key.secret_bytes())
-        .expect("Failed to generate keypair from secret key");
-
-    let message =
-        Message::from_slice(&hex::decode(message).expect("UnableToDecodeHexMessageForSigning"))
-            .expect("FailedToConvertHexMessageToBytes");
-
-    let sig = secp.sign_schnorr_no_aux_rand(&message, &pair);
-
-    assert!(secp.verify_schnorr(&sig, &message, &xpub).is_ok());
-
-    return hex::encode(sig.as_ref());
-}
 
 pub fn publish_zap_to_relays(
     zap_request_json: ZapRequest,

@@ -7,16 +7,15 @@ use lnd_grpc_rust::{
     lnrpc::{invoice::InvoiceState, Invoice},
     LndClient,
 };
-use rusted_nostr_tools::event_methods::{get_event_hash, UnsignedEvent};
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use rusted_nostr_tools::{
+    event_methods::{get_event_hash, sign_event, UnsignedEvent},
+    GeneratePublicKey,
+};
 use serde_json::json;
 
 use crate::{
     credentials::get_lnd::get_lnd,
-    server::{
-        constants::CONSTANTS,
-        publish_to_relay::{publish, sign_message},
-    },
+    server::{constants::CONSTANTS, publish_to_relay::publish},
 };
 
 use super::{
@@ -73,21 +72,10 @@ pub fn get_nostr_keys() -> Result<(String, String), String> {
         Err(_) => return Err("NostrPrivateKeyIsUndefined".to_string()),
     };
 
-    let privkey_bytes = hex::decode(&privkey).map_err(|_| "InvalidPrivateKey".to_string())?;
-    let pubkey_bytes = private_key_to_public_key(&privkey_bytes);
-    let pubkey_hex = hex::encode(&pubkey_bytes);
+    let binding = GeneratePublicKey::new(&privkey);
+    let pubkey_hex = binding.hex_public_key();
 
-    Ok((privkey, pubkey_hex))
-}
-
-fn private_key_to_public_key(privkey: &[u8]) -> Vec<u8> {
-    let secp = Secp256k1::new();
-    let secret_key = SecretKey::from_slice(privkey).unwrap();
-    let (public_key, _) = PublicKey::from_secret_key(&secp, &secret_key).x_only_public_key();
-
-    let serialized = public_key.serialize().to_vec();
-
-    return serialized;
+    Ok((privkey, pubkey_hex.to_string()))
 }
 
 pub async fn create_invoice(
@@ -191,6 +179,7 @@ pub async fn nip05_broadcast(domain: String, username: String) {
 
             // let id = calculate_id(json!([0, pubkey, timestamp, 0, [], content]));
             let id = get_event_hash(&event).expect("FailedToCalculateEventHash");
+            let signature = sign_event(&event, &privkey).expect("FailedToSignEvent");
 
             let nip05_json = json!([
                 "EVENT",
@@ -201,7 +190,7 @@ pub async fn nip05_broadcast(domain: String, username: String) {
                     "kind": 0,
                     "pubkey": pubkey,
                     "tags": [],
-                    "sig": sign_message(privkey, &id)
+                    "sig": signature.sig,
                 },
             ]);
 

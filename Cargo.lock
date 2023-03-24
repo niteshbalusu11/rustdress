@@ -1301,7 +1301,6 @@ dependencies = [
  "hyper",
  "lnd_grpc_rust",
  "rusted-nostr-tools",
- "secp256k1 0.26.0",
  "serde",
  "serde_json",
  "sha2",
@@ -1313,16 +1312,16 @@ dependencies = [
 
 [[package]]
 name = "rusted-nostr-tools"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33ecae656f87ab562672e655f00fc5f464c251420edaeba7f877db114bd20d6b"
+checksum = "473cd567357b85818a9724b9c3ae0aefd8f1f64bb398fe3bda0d22db6592f91d"
 dependencies = [
  "bech32",
  "chrono",
  "hex",
  "rand",
  "reqwest",
- "secp256k1 0.27.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "sha2",
@@ -1399,15 +1398,6 @@ checksum = "d53dcdb7c9f8158937a7981b48accfd39a43af418591a5d008c7b22b5e1b7ca4"
 dependencies = [
  "ring",
  "untrusted",
-]
-
-[[package]]
-name = "secp256k1"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4124a35fe33ae14259c490fd70fa199a32b9ce9502f2ee6bc4f81ec06fa65894"
-dependencies = [
- "secp256k1-sys",
 ]
 
 [[package]]
