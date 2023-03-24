@@ -1,12 +1,13 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures::{future::join_all, SinkExt};
+use rusted_nostr_tools::event_methods::{get_event_hash, sign_event, UnsignedEvent};
 use secp256k1::{KeyPair, Message, PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 use std::vec;
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
 
-use super::parsing_functions::{calculate_id, ZapRequest};
+use super::parsing_functions::ZapRequest;
 
 pub fn sign_message(privkey: String, message: &str) -> String {
     let secp = Secp256k1::new();
@@ -49,14 +50,14 @@ pub fn publish_zap_to_relays(
     let get_ptags =
         get_tags(&zap_request_json.tags, "p").expect("FailedToParseP-TagsForPublishingToRelays");
 
-    let ptags = vec!["p", &get_ptags[0]];
-    let etags = vec!["e", &get_etags[0]];
+    let ptags = vec!["p".to_string(), get_ptags[0].clone()];
+    let etags = vec!["e".to_string(), get_etags[0].clone()];
 
-    let bolt11 = vec!["bolt11", &payment_request];
+    let bolt11 = vec!["bolt11".to_string(), payment_request.clone()];
 
-    let description = vec!["description", &zap_request_string];
+    let description = vec!["description".to_string(), zap_request_string.clone()];
 
-    let payment_secret = vec!["preimage", &decoded_preimage];
+    let payment_secret = vec!["preimage".to_string(), decoded_preimage.clone()];
 
     let content = if comment.is_empty() {
         zap_request_json.content
@@ -71,8 +72,19 @@ pub fn publish_zap_to_relays(
     tags.push(payment_secret);
     tags.push(description);
 
-    let id = calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
-    let sig = sign_message(privkey, &id);
+    let event: UnsignedEvent = UnsignedEvent {
+        pubkey: pubkey.clone(),
+        created_at: settle_date,
+        kind: 9735,
+        tags: tags.clone(),
+        content: content.clone(),
+    };
+
+    let id = get_event_hash(&event).expect("FailedToCalculateEventHashForPublishingToRelays");
+
+    // let id = calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
+    // let sig = sign_message(privkey, &id);
+    let signature = sign_event(&event, &privkey).expect("FailedToSignEventForPublishingToRelays");
 
     let zap_note = json!([
         "EVENT",
@@ -83,7 +95,7 @@ pub fn publish_zap_to_relays(
         "kind": 9735,
         "tags": tags,
         "content": content,
-        "sig": sig
+        "sig": signature.sig
     }]);
 
     let publish_message =

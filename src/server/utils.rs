@@ -7,6 +7,7 @@ use lnd_grpc_rust::{
     lnrpc::{invoice::InvoiceState, Invoice},
     LndClient,
 };
+use rusted_nostr_tools::event_methods::{get_event_hash, UnsignedEvent};
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use serde_json::json;
 
@@ -14,7 +15,6 @@ use crate::{
     credentials::get_lnd::get_lnd,
     server::{
         constants::CONSTANTS,
-        parsing_functions::calculate_id,
         publish_to_relay::{publish, sign_message},
     },
 };
@@ -181,7 +181,16 @@ pub async fn nip05_broadcast(domain: String, username: String) {
             let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
             let timestamp = current_time.as_secs();
 
-            let id = calculate_id(json!([0, pubkey, timestamp, 0, [], content]));
+            let event = UnsignedEvent {
+                content: content.clone(),
+                created_at: timestamp.clone() as i64,
+                kind: 0,
+                tags: [].to_vec(),
+                pubkey: pubkey.clone(),
+            };
+
+            // let id = calculate_id(json!([0, pubkey, timestamp, 0, [], content]));
+            let id = get_event_hash(&event).expect("FailedToCalculateEventHash");
 
             let nip05_json = json!([
                 "EVENT",
