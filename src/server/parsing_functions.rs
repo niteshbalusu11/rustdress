@@ -1,7 +1,10 @@
-use bech32::FromBase32;
 use hyper::{Body, Response, StatusCode};
+use rusted_nostr_tools::{
+    event_methods::{get_event_hash, UnsignedEvent},
+    ConvertKey,
+};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 use urlencoding::decode;
 
@@ -144,14 +147,18 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, St
                         return Err("MissingRelaysInZapRequest".to_string());
                     }
 
-                    let id = calculate_id(json!([
-                        0,
-                        p.pubkey,
-                        p.created_at,
-                        p.kind,
-                        p.tags,
-                        p.content,
-                    ]));
+                    let event = UnsignedEvent {
+                        content: p.content.clone(),
+                        created_at: p.created_at as i64,
+                        kind: p.kind,
+                        tags: p.tags.clone(),
+                        pubkey: p.pubkey.clone(),
+                    };
+
+                    let id = match get_event_hash(&event) {
+                        Ok(id) => id,
+                        Err(_) => return Err("FailedToGetEventHash".to_string()),
+                    };
 
                     if id != p.id {
                         return Err("InvalidZapRequestId".to_string());
@@ -192,16 +199,6 @@ pub fn get_tags(tags: &Vec<Vec<String>>, key: &str) -> Option<Vec<String>> {
     } else {
         Some(values)
     }
-}
-
-pub fn calculate_id(commitment: Value) -> String {
-    let commitment_string =
-        serde_json::to_string(&commitment).expect("Failed to serialize response body to JSON");
-
-    let mut hasher = Sha256::new();
-    hasher.update(commitment_string.as_bytes());
-    let hash = hasher.finalize();
-    hex::encode(hash)
 }
 
 pub fn handle_response_body() -> String {
@@ -268,16 +265,8 @@ pub fn get_digest(nostr: Option<&ZapRequest>) -> Vec<u8> {
 }
 
 pub fn convert_key(key: &str) -> String {
-    let decoded = bech32::decode(key);
-
-    match decoded {
-        Ok((_, data, _)) => {
-            let from_base32 = match Vec::<u8>::from_base32(&data) {
-                Ok(key) => key,
-                Err(_) => return key.to_string(),
-            };
-            return hex::encode(from_base32);
-        }
-        Err(_) => key.to_string(),
-    }
+    match ConvertKey::to_hex(key) {
+        Ok(key) => return key,
+        Err(_) => return key.to_string(),
+    };
 }
