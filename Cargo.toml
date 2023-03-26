@@ -21,4 +21,4 @@ tungstenite = "0.18"
 tokio-tungstenite = { version = "0.18.0", features = ["native-tls"] }
 futures-util = "0.3.26"
 futures = "0.3.27"
-rusted-nostr-tools = "0.1.2"
+rusted-nostr-tools = "0.1.3"

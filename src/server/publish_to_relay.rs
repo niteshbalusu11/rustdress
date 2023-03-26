@@ -1,15 +1,13 @@
 use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures::{future::join_all, SinkExt};
-use rusted_nostr_tools::event_methods::{get_event_hash, sign_event, UnsignedEvent};
+use rusted_nostr_tools::event_methods::{get_event_hash, sign_event, SignedEvent, UnsignedEvent};
 use serde_json::json;
 use std::vec;
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
 
-use super::parsing_functions::ZapRequest;
-
 pub fn publish_zap_to_relays(
-    zap_request_json: ZapRequest,
+    zap_request_json: SignedEvent,
     comment: &str,
     payment_request: String,
     preimage: Vec<u8>,
@@ -17,7 +15,7 @@ pub fn publish_zap_to_relays(
 ) {
     let decoded_preimage = hex::encode(preimage);
     let (privkey, pubkey) = get_nostr_keys().unwrap();
-    let zap_request_string = serde_json::to_string::<ZapRequest>(&zap_request_json)
+    let zap_request_string = serde_json::to_string::<SignedEvent>(&zap_request_json)
         .expect("FailedToParseZapRequestForPublishingToRelays");
 
     let relays = get_tags(&zap_request_json.tags, "relays")

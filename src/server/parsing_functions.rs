@@ -1,9 +1,8 @@
 use hyper::{Body, Response, StatusCode};
 use rusted_nostr_tools::{
-    event_methods::{get_event_hash, UnsignedEvent},
+    event_methods::{get_event_hash, SignedEvent, UnsignedEvent},
     ConvertKey,
 };
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use urlencoding::decode;
@@ -11,17 +10,6 @@ use urlencoding::decode;
 use crate::server::constants::CONSTANTS;
 
 use super::utils::{get_identifiers, get_nostr_keys};
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ZapRequest {
-    pub content: String,
-    pub created_at: u64,
-    pub id: String,
-    pub kind: u64,
-    pub pubkey: String,
-    pub sig: String,
-    pub tags: Vec<Vec<String>>,
-}
 
 pub fn find_key<'a>(key: &'a str, vector: &'a [(String, String)]) -> Option<&'a (String, String)> {
     vector.iter().find(|(k, _)| *k == key)
@@ -100,7 +88,7 @@ pub fn parse_name_query(key: Option<(String, String)>) -> Result<String, String>
     }
 }
 
-pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, String> {
+pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<SignedEvent, String> {
     match key {
         Some((_, nostr)) => {
             let decoded_url = match decode(&nostr) {
@@ -108,7 +96,7 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<ZapRequest, St
                 Err(_) => return Err("FailedToDecodeNostrQueryString".to_string()),
             };
 
-            match serde_json::from_str::<ZapRequest>(&decoded_url) {
+            match serde_json::from_str::<SignedEvent>(&decoded_url) {
                 Ok(p) => {
                     if p.kind != 9734 {
                         return Err("InvalidZapKind".to_string());
@@ -240,7 +228,7 @@ pub fn handle_response_body() -> String {
     return response_body_string;
 }
 
-pub fn get_digest(nostr: Option<&ZapRequest>) -> Vec<u8> {
+pub fn get_digest(nostr: Option<&SignedEvent>) -> Vec<u8> {
     let mut hasher = Sha256::new();
 
     let (domain, username) = get_identifiers();

@@ -8,7 +8,7 @@ use lnd_grpc_rust::{
     LndClient,
 };
 use rusted_nostr_tools::{
-    event_methods::{get_event_hash, sign_event, UnsignedEvent},
+    event_methods::{get_event_hash, sign_event, SignedEvent, UnsignedEvent},
     GeneratePublicKey,
 };
 use serde_json::json;
@@ -19,8 +19,7 @@ use crate::{
 };
 
 use super::{
-    constants::EnvVariables,
-    parsing_functions::{convert_key, ZapRequest},
+    constants::EnvVariables, parsing_functions::convert_key,
     publish_to_relay::publish_zap_to_relays,
 };
 
@@ -82,7 +81,7 @@ pub async fn create_invoice(
     digest: Vec<u8>,
     comment: String,
     amount: i64,
-    nostr_query: Result<ZapRequest, String>,
+    nostr_query: Result<SignedEvent, String>,
 ) -> String {
     let mut lnd = get_lnd().await;
 
@@ -117,7 +116,7 @@ pub async fn create_invoice(
 }
 
 async fn watch_invoice(
-    zap_request: ZapRequest,
+    zap_request: SignedEvent,
     mut lnd: LndClient,
     r_hash: &Vec<u8>,
     comment: &str,
