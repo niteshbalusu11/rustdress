@@ -2,13 +2,6 @@
 Self hosted Lightning Address Server and NIP-05 Verification Server
 <br></br>
 
-### You can download the binary from the releases page: 
-https://github.com/niteshbalusu11/rustdress/releases
-
-<br></br>
-
-
-
 ### To build from source:
 Pre-requisites:
 You will need rust installed.
