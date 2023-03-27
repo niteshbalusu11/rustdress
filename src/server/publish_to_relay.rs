@@ -59,8 +59,6 @@ pub fn publish_zap_to_relays(
 
     let id = get_event_hash(&event).expect("FailedToCalculateEventHashForPublishingToRelays");
 
-    // let id = calculate_id(json!([0, pubkey, settle_date, 9735, tags, content,]));
-    // let sig = sign_message(privkey, &id);
     let signature = sign_event(&event, &privkey).expect("FailedToSignEventForPublishingToRelays");
 
     let zap_note = json!([

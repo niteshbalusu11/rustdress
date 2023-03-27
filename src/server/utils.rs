@@ -176,7 +176,6 @@ pub async fn nip05_broadcast(domain: String, username: String) {
                 pubkey: pubkey.clone(),
             };
 
-            // let id = calculate_id(json!([0, pubkey, timestamp, 0, [], content]));
             let id = get_event_hash(&event).expect("FailedToCalculateEventHash");
             let signature = sign_event(&event, &privkey).expect("FailedToSignEvent");
 
