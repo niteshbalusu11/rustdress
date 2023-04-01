@@ -2,9 +2,11 @@ use crate::server::{parsing_functions::get_tags, utils::get_nostr_keys};
 use futures::{future::join_all, SinkExt};
 use rusted_nostr_tools::event_methods::{get_event_hash, sign_event, SignedEvent, UnsignedEvent};
 use serde_json::json;
-use std::vec;
+use std::{collections::HashSet, vec};
 use tokio_tungstenite::connect_async;
 use tungstenite::Message as SocketMessage;
+
+use super::constants::CONSTANTS;
 
 pub fn publish_zap_to_relays(
     zap_request_json: SignedEvent,
@@ -20,6 +22,14 @@ pub fn publish_zap_to_relays(
 
     let relays = get_tags(&zap_request_json.tags, "relays")
         .expect("FailedToParseE-TagsForPublishingToRelays");
+
+    let default_relays: Vec<String> = CONSTANTS.relays.iter().map(|s| s.to_string()).collect();
+
+    // Create a HashSet from both vectors to remove duplicates.
+    let mut combined_relays: HashSet<String> = relays.into_iter().collect();
+    combined_relays.extend(default_relays.into_iter());
+
+    let unique_relays: Vec<String> = combined_relays.into_iter().collect();
 
     let get_etags =
         get_tags(&zap_request_json.tags, "e").expect("FailedToParseP-TagsForPublishingToRelays");
@@ -77,7 +87,7 @@ pub fn publish_zap_to_relays(
         serde_json::to_string(&zap_note).expect("Failed to serialize response body to JSON");
 
     tokio::spawn(async move {
-        publish(relays, publish_message).await;
+        publish(unique_relays, publish_message).await;
     });
 }
 
