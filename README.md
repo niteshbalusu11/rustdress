@@ -19,7 +19,7 @@ cd rustdress
 cp .env.example .env
 
 # Run the app
-cargo run
+cargo run --release
 
 # You might have to install cmake, pkg-config
 
