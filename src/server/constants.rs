@@ -43,6 +43,7 @@ pub enum EnvVariables {
     INCLUDE_HOP_HINTS,
     NOSTR_PRIVATE_KEY,
     NIP_05_PUBKEY,
+    RELAYS,
 }
 
 impl AsRef<OsStr> for EnvVariables {
@@ -60,6 +61,7 @@ impl AsRef<OsStr> for EnvVariables {
             EnvVariables::INCLUDE_HOP_HINTS => OsStr::new("INCLUDE_HOP_HINTS"),
             EnvVariables::NOSTR_PRIVATE_KEY => OsStr::new("NOSTR_PRIVATE_KEY"),
             EnvVariables::NIP_05_PUBKEY => OsStr::new("NIP_05_PUBKEY"),
+            EnvVariables::RELAYS => OsStr::new("RELAYS"),
         }
     }
 }

@@ -1,4 +1,7 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashSet,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use bech32::{encode, ToBase32, Variant};
 use dotenv::dotenv;
@@ -158,7 +161,7 @@ async fn watch_invoice(
 pub async fn nip05_broadcast(domain: String, username: String) {
     match get_nostr_keys() {
         Ok((privkey, pubkey)) => {
-            let relays = CONSTANTS.relays;
+            let relays = get_relays(None);
 
             let content = format!(
                 "{{\"name\": \"{}\", \"nip05\": \"{}@{}\"}}",
@@ -192,17 +195,42 @@ pub async fn nip05_broadcast(domain: String, username: String) {
                 },
             ]);
 
-            let relay_string: Vec<String> = relays.iter().map(|s| s.to_string()).collect();
-
             let publish_message = serde_json::to_string(&nip05_json)
                 .expect("Failed to serialize response body to JSON");
 
             tokio::spawn(async move {
-                publish(relay_string, publish_message).await;
+                publish(relays, publish_message).await;
             });
 
             pubkey
         }
         Err(_) => "".to_string(),
     };
+}
+
+pub fn get_relays(relays: Option<Vec<String>>) -> Vec<String> {
+    let arg_relays = relays.unwrap_or(vec![]);
+
+    let env_relays = std::env::var(EnvVariables::RELAYS);
+    let mut env_relays_vec: Vec<String> = vec![];
+
+    match env_relays {
+        Ok(ref r) => {
+            env_relays_vec = r.split(',').map(|s| s.to_string()).collect();
+        }
+        Err(_) => {}
+    };
+
+    println!("Relays: {:?}", env_relays_vec);
+
+    let default_relays: Vec<String> = CONSTANTS.relays.iter().map(|s| s.to_string()).collect();
+
+    // Create a HashSet from both vectors to remove duplicates.
+    let mut combined_relays: HashSet<String> = env_relays_vec.into_iter().collect();
+    combined_relays.extend(default_relays.into_iter());
+    combined_relays.extend(arg_relays.into_iter());
+
+    let unique_relays: Vec<String> = combined_relays.into_iter().collect();
+
+    unique_relays
 }
