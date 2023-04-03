@@ -1290,7 +1290,7 @@ dependencies = [
 
 [[package]]
 name = "rustdress"
-version = "0.3.10"
+version = "0.4.10"
 dependencies = [
  "bech32",
  "chrono",
