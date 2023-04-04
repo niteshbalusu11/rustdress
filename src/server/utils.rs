@@ -221,8 +221,6 @@ pub fn get_relays(relays: Option<Vec<String>>) -> Vec<String> {
         Err(_) => {}
     };
 
-    println!("Relays: {:?}", env_relays_vec);
-
     let default_relays: Vec<String> = CONSTANTS.relays.iter().map(|s| s.to_string()).collect();
 
     // Create a HashSet from both vectors to remove duplicates.
