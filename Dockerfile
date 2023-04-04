@@ -1,15 +1,32 @@
-FROM rust:1.68.2 as builder
+# First stage: Build the Rust application
+FROM rust:1.68.2 AS builder
 
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y cmake pkg-config && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set up the working directory
 WORKDIR /app
 
+# Copy the Rust project's source files
 COPY . .
 
+# Build the Rust project
 RUN cargo build --release
 
+# Second stage: Create a smaller runtime image
 FROM debian:buster-slim
 
-WORKDIR /app
+# Install necessary runtime dependencies
+RUN apt-get update && \
+    apt-get install -y libssl-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/rustdress /app
+# Copy the compiled binary from the builder stage
+COPY --from=builder /app/target/release/rustdress /usr/local/bin/
 
-CMD ["./rustdress"]
+# Run the Rust binary
+CMD ["rustdress"]
