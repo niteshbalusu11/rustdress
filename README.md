@@ -4,7 +4,7 @@ Self hosted Lightning Address Server and NIP-05 Verification Server
 
 ### For Docker:
 
-- Check the Dockerfile and the same-docker-compose.yml file.
+- Check the `Dockerfile` and the `sample-docker-compose.yaml` file.
 
 ### To build from source:
 Pre-requisites:
