@@ -35,4 +35,4 @@ jobs:
         run: |
           docker buildx build \
           --platform linux/amd64 \
-          --no-cache -t niteshbalusu/lndboss:amd64 --push .
+          --no-cache -t niteshbalusu/rustdress:amd64 --push .
