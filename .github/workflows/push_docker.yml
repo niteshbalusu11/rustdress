@@ -5,9 +5,6 @@ on:
     branches:
       - master
     paths-ignore:
-      - '**/*.md'
-      - '**/*.yml'
-      - '**/*.yaml'
       - 'README.md'
       - 'CHANGELOG.md'
 
@@ -37,5 +34,5 @@ jobs:
       - name: Run Docker buildx
         run: |
           docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --no-cache -t niteshbalusu/lndboss:latest --push .
+          --platform linux/amd64 \
+          --no-cache -t niteshbalusu/lndboss:amd64 --push .
