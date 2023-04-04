@@ -21,7 +21,7 @@ FROM debian:buster-slim
 
 # Install necessary runtime dependencies
 RUN apt-get update && \
-    apt-get install -y libssl-dev && \
+    apt-get install -y libssl-dev ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
