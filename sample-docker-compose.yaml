@@ -1,0 +1,54 @@
+version: "3.9"
+services:
+  lnd:
+    container_name: lnd
+    image: docker.io/lightninglabs/lnd:v0.16.0-beta
+    restart: unless-stopped
+    volumes: 
+      - /root/.lnd:/root/.lnd
+    ports:
+      - "9735:9735"
+      - "10009:10009"
+      - "8080:8080"
+    command:
+        lnd
+
+  rustdress:
+    container_name: rustdress
+    image: docker.io/niteshbalusu/rustdress:amd64  # or docker.io/niteshbalusu/rustdress:arm64
+    depends_on: [lnd]
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    environment:
+      - USERNAME=your_username
+      - DOMAIN=your_domain
+      - CERT_HEX=your_cert_hex
+      - MACAROON_HEX=your_macaroon_hex
+      - SOCKET=lnd:10009
+      - HOST=0.0.0.0
+      - PORT=5000
+      - INCLUDE_HOP_HINTS=true
+      - NOSTR_PRIVATE_KEY=random_nostr_private_key
+      - NIP_05_PUBKEY=your_nostr_pubkey
+      - RELAYS=wss://relay.nostr.band,  wss://brb.io
+
+  caddy:
+    container_name: caddy # caddy is a reverse proxy that will handle the SSL certificate and redirect traffic to rustdress
+    image: caddy:2.6.4
+    restart: on-failure
+    depends_on: [rustdress]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - /root/Caddyfile:/etc/caddy/Caddyfile
+      - /root/caddy/data:/data
+      - /root/caddy/config:/config
+
+networks:
+  default:
+    name: lnd_network
+    external: true
+

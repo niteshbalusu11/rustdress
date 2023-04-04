@@ -2,6 +2,10 @@
 Self hosted Lightning Address Server and NIP-05 Verification Server
 <br></br>
 
+### For Docker:
+
+- Check the Dockerfile and the same-docker-compose.yml file.
+
 ### To build from source:
 Pre-requisites:
 You will need rust installed.
