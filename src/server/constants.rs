@@ -25,7 +25,7 @@ pub const CONSTANTS: Constants = Constants {
         "wss://no.str.cr",
     ],
     max_comment_length: 280,
-    max_sendamount: 100000000,
+    max_sendamount: 10000000000,
     min_sendamount: 1000,
 };
 
