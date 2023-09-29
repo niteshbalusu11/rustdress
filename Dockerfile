@@ -14,7 +14,7 @@ WORKDIR /app
 COPY . .
 
 # Build the Rust project
-RUN cargo build --release
+RUN cargo rustc --release -- -C target-feature=+crt-static
 
 # Second stage: Create a smaller runtime image
 FROM debian:buster-slim
