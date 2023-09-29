@@ -288,12 +288,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "data-encoding"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2e66c9d817f1720209181c316d28635c050fa304f9c79e47a520882661b7308"
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1310,7 +1304,7 @@ checksum = "d626bb9dae77e28219937af045c257c28bfd3f69333c512553507f5f9798cb76"
 
 [[package]]
 name = "rustdress"
-version = "0.4.10"
+version = "0.4.11"
 dependencies = [
  "bech32",
  "chrono",
@@ -1325,8 +1319,8 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio",
- "tokio-tungstenite 0.20.1",
- "tungstenite 0.20.1",
+ "tokio-tungstenite",
+ "tungstenite",
  "urlencoding",
 ]
 
@@ -1349,8 +1343,8 @@ dependencies = [
  "sha2",
  "thiserror",
  "tokio",
- "tokio-tungstenite 0.18.0",
- "tungstenite 0.18.0",
+ "tokio-tungstenite",
+ "tungstenite",
  "url",
 ]
 
@@ -1784,26 +1778,14 @@ checksum = "54319c93411147bced34cb5609a80e0a8e44c5999c93903a81cd866630ec0bfd"
 dependencies = [
  "futures-util",
  "log",
+ "native-tls",
  "rustls 0.20.9",
  "tokio",
+ "tokio-native-tls",
  "tokio-rustls 0.23.4",
- "tungstenite 0.18.0",
+ "tungstenite",
  "webpki",
  "webpki-roots 0.22.6",
-]
-
-[[package]]
-name = "tokio-tungstenite"
-version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "212d5dcb2a1ce06d81107c3d0ffa3121fe974b73f068c8282cb1c32328113b6c"
-dependencies = [
- "futures-util",
- "log",
- "native-tls",
- "tokio",
- "tokio-native-tls",
- "tungstenite 0.20.1",
 ]
 
 [[package]]
@@ -1991,6 +1973,7 @@ dependencies = [
  "http",
  "httparse",
  "log",
+ "native-tls",
  "rand",
  "rustls 0.20.9",
  "sha1",
@@ -1999,26 +1982,6 @@ dependencies = [
  "utf-8",
  "webpki",
  "webpki-roots 0.22.6",
-]
-
-[[package]]
-name = "tungstenite"
-version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e3dac10fd62eaf6617d3a904ae222845979aec67c615d1c842b4002c7666fb9"
-dependencies = [
- "byteorder",
- "bytes",
- "data-encoding",
- "http",
- "httparse",
- "log",
- "native-tls",
- "rand",
- "sha1",
- "thiserror",
- "url",
- "utf-8",
 ]
 
 [[package]]

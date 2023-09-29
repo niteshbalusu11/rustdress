@@ -1,5 +1,5 @@
 # First stage: Build the Rust application
-FROM rust:1.68.2 AS builder
+FROM rust:1.72.1 AS builder
 
 # Install system dependencies
 RUN apt-get update && \
