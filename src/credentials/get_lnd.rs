@@ -13,7 +13,7 @@ pub async fn get_lnd() -> LndClient {
     return client;
 }
 
-pub async fn test_invoice(mut client: LndClient) {
+pub async fn test_invoice(mut client: LndClient) -> Result<(), anyhow::Error> {
     client
         .lightning()
         .add_invoice(Invoice {
@@ -21,6 +21,7 @@ pub async fn test_invoice(mut client: LndClient) {
             expiry: 100,
             ..Default::default()
         })
-        .await
-        .expect("FailedToConnectToLnd");
+        .await?;
+
+    Ok(())
 }

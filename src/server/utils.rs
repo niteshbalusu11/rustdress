@@ -14,7 +14,6 @@ use rusted_nostr_tools::{
     event_methods::{get_event_hash, sign_event, SignedEvent, UnsignedEvent},
     GeneratePublicKey,
 };
-use serde_json::json;
 
 use crate::{
     credentials::get_lnd::get_lnd,
@@ -22,7 +21,8 @@ use crate::{
 };
 
 use super::{
-    constants::EnvVariables, parsing_functions::convert_key,
+    constants::{EnvVariables, Nip05EventDetails},
+    parsing_functions::convert_key,
     publish_to_relay::publish_zap_to_relays,
 };
 
@@ -182,21 +182,20 @@ pub async fn nip05_broadcast(domain: String, username: String) {
             let id = get_event_hash(&event).expect("FailedToCalculateEventHash");
             let signature = sign_event(&event, &privkey).expect("FailedToSignEvent");
 
-            let nip05_json = json!([
-                "EVENT",
-                {
-                    "content": content,
-                    "created_at": timestamp,
-                    "id": id,
-                    "kind": 0,
-                    "pubkey": pubkey,
-                    "tags": [],
-                    "sig": signature.sig,
-                },
-            ]);
+            let nip05_event_details = Nip05EventDetails {
+                content,
+                created_at: timestamp,
+                id,
+                kind: 0,
+                pubkey: pubkey.clone(),
+                tags: vec![],
+                sig: signature.sig,
+            };
 
-            let publish_message = serde_json::to_string(&nip05_json)
-                .expect("Failed to serialize response body to JSON");
+            let event = ("EVENT".to_string(), nip05_event_details);
+
+            let publish_message =
+                serde_json::to_string(&event).expect("Failed to serialize response body to JSON");
 
             tokio::spawn(async move {
                 publish(relays, publish_message).await;

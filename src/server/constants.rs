@@ -1,5 +1,7 @@
 use std::ffi::OsStr;
 
+use serde::{Deserialize, Serialize};
+
 pub struct Constants {
     pub max_comment_length: usize,
     pub max_sendamount: i64,
@@ -64,4 +66,15 @@ impl AsRef<OsStr> for EnvVariables {
             EnvVariables::RELAYS => OsStr::new("RELAYS"),
         }
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub(crate) struct Nip05EventDetails {
+    pub content: String,
+    pub created_at: u64,
+    pub id: String,
+    pub kind: u16,
+    pub pubkey: String,
+    pub tags: Vec<String>,
+    pub sig: String,
 }

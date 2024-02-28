@@ -1,4 +1,3 @@
-use dotenv::dotenv;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::Server;
 use std::net::Ipv4Addr;
@@ -9,8 +8,6 @@ use crate::server::handle_request::handle_request;
 pub async fn start_server() {
     let default_host = "127.0.0.1".parse::<Ipv4Addr>().unwrap();
     let default_port = 3000;
-
-    dotenv().ok();
 
     let host = match std::env::var(EnvVariables::HOST) {
         Ok(val) => {
@@ -35,14 +32,7 @@ pub async fn start_server() {
             if val.is_empty() {
                 default_port
             } else {
-                let res = val.to_string().parse::<u16>();
-                match res {
-                    Ok(res) => res,
-                    Err(_) => {
-                        println!("Failed To Parse Port, Returning Default Port");
-                        default_port
-                    }
-                }
+                val.to_string().parse::<u16>().unwrap_or(default_port)
             }
         }
         Err(_) => default_port,
