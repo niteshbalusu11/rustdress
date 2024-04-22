@@ -1,3 +1,5 @@
+use std::env;
+
 use hyper::{Body, Response, StatusCode};
 use rusted_nostr_tools::{
     event_methods::{get_event_hash, SignedEvent, UnsignedEvent},
@@ -9,7 +11,10 @@ use urlencoding::decode;
 
 use crate::server::constants::CONSTANTS;
 
-use super::utils::{get_identifiers, get_nostr_keys};
+use super::{
+    constants::EnvVariables,
+    utils::{get_identifiers, get_nostr_keys},
+};
 
 pub fn find_key<'a>(key: &'a str, vector: &'a [(String, String)]) -> Option<&'a (String, String)> {
     vector.iter().find(|(k, _)| *k == key)
@@ -202,10 +207,24 @@ pub fn handle_response_body() -> String {
 
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
+    let max_sendable = match env::var(EnvVariables::MAX_SENDABLE)
+        .unwrap_or(CONSTANTS.max_sendamount.to_string())
+        .parse::<i64>()
+    {
+        Ok(n) => {
+            if n < 1000 {
+                CONSTANTS.max_sendamount
+            } else {
+                n
+            }
+        }
+        Err(_) => CONSTANTS.max_sendamount,
+    };
+
     let mut response_body = json!({
         "callback": lnurl_url,
         "commentAllowed": CONSTANTS.max_comment_length,
-        "maxSendable": CONSTANTS.max_sendamount,
+        "maxSendable": max_sendable,
         "metadata": metadata,
         "minSendable": CONSTANTS.min_sendamount,
         "tag": "payRequest",

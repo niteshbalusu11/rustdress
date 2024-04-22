@@ -46,6 +46,7 @@ pub enum EnvVariables {
     NOSTR_PRIVATE_KEY,
     NIP_05_PUBKEY,
     RELAYS,
+    MAX_SENDABLE,
 }
 
 impl AsRef<OsStr> for EnvVariables {
@@ -64,6 +65,7 @@ impl AsRef<OsStr> for EnvVariables {
             EnvVariables::NOSTR_PRIVATE_KEY => OsStr::new("NOSTR_PRIVATE_KEY"),
             EnvVariables::NIP_05_PUBKEY => OsStr::new("NIP_05_PUBKEY"),
             EnvVariables::RELAYS => OsStr::new("RELAYS"),
+            EnvVariables::MAX_SENDABLE => OsStr::new("MAX_SENDABLE"),
         }
     }
 }
