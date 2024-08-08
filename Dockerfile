@@ -1,5 +1,5 @@
 # First stage: Build the Rust application
-FROM rust:1.72.1 AS builder
+FROM rust:1.79 AS builder
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y cmake pkg-config && \
@@ -13,10 +13,10 @@ COPY . .
 RUN cargo build --release
 
 # Second stage: Create a smaller runtime image
-FROM debian:bullseye-slim
+FROM ubuntu:22.04
 # Install necessary runtime dependencies
 RUN apt-get update && \
-    apt-get install -y libssl1.1 ca-certificates && \
+    apt-get install -y libssl3 ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 # Copy the compiled binary from the builder stage
