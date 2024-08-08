@@ -46,12 +46,7 @@ pub fn publish_zap_to_relays(
         comment.to_string()
     };
 
-    let mut tags = Vec::new();
-    tags.push(ptags);
-    tags.push(etags);
-    tags.push(bolt11);
-    tags.push(payment_secret);
-    tags.push(description);
+    let tags = vec![ptags, etags, bolt11, payment_secret, description];
 
     let event: UnsignedEvent = UnsignedEvent {
         pubkey: pubkey.clone(),
@@ -90,7 +85,7 @@ pub async fn publish(relays: Vec<String>, publish_message: String) {
 
     for relay in relays {
         let (host, port) = match relay.split_once("://") {
-            Some((_, addr)) => match addr.split_once(":") {
+            Some((_, addr)) => match addr.split_once(':') {
                 Some((host, port)) => (host, port),
                 None => (addr, "443"),
             },
@@ -105,7 +100,7 @@ pub async fn publish(relays: Vec<String>, publish_message: String) {
     let results = join_all(futures).await;
 
     // Handle any errors that occurred
-    for (_index, _result) in results.into_iter().enumerate() {}
+    for _result in results.into_iter() {}
 }
 
 async fn send_message(uri: String, message: String) -> Result<(), ()> {

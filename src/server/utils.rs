@@ -32,7 +32,7 @@ pub fn get_identifiers() -> (String, String) {
     let domain = std::env::var(EnvVariables::DOMAIN).unwrap();
     let username = std::env::var(EnvVariables::USERNAME).unwrap();
 
-    return (domain, username);
+    (domain, username)
 }
 
 pub fn bech32_encode(prefix: String, data: String) -> Result<String, bech32::Error> {
@@ -118,12 +118,7 @@ pub async fn create_invoice(
     invoice_result.payment_request
 }
 
-async fn watch_invoice(
-    zap_request: SignedEvent,
-    mut lnd: LndClient,
-    r_hash: &Vec<u8>,
-    comment: &str,
-) {
+async fn watch_invoice(zap_request: SignedEvent, mut lnd: LndClient, r_hash: &[u8], comment: &str) {
     let mut invoice_subscription = lnd
         .invoices()
         .subscribe_single_invoice(SubscribeSingleInvoiceRequest {
@@ -173,7 +168,7 @@ pub async fn nip05_broadcast(domain: String, username: String) {
 
             let event = UnsignedEvent {
                 content: content.clone(),
-                created_at: timestamp.clone() as i64,
+                created_at: timestamp as i64,
                 kind: 0,
                 tags: [].to_vec(),
                 pubkey: pubkey.clone(),
@@ -208,24 +203,21 @@ pub async fn nip05_broadcast(domain: String, username: String) {
 }
 
 pub fn get_relays(relays: Option<Vec<String>>) -> Vec<String> {
-    let arg_relays = relays.unwrap_or(vec![]);
+    let arg_relays = relays.unwrap_or_default();
 
     let env_relays = std::env::var(EnvVariables::RELAYS);
     let mut env_relays_vec: Vec<String> = vec![];
 
-    match env_relays {
-        Ok(ref r) => {
-            env_relays_vec = r.split(',').map(|s| s.to_string()).collect();
-        }
-        Err(_) => {}
-    };
+    if let Ok(ref r) = env_relays {
+        env_relays_vec = r.split(',').map(|s| s.to_string()).collect();
+    }
 
     let default_relays: Vec<String> = CONSTANTS.relays.iter().map(|s| s.to_string()).collect();
 
     // Create a HashSet from both vectors to remove duplicates.
     let mut combined_relays: HashSet<String> = env_relays_vec.into_iter().collect();
-    combined_relays.extend(default_relays.into_iter());
-    combined_relays.extend(arg_relays.into_iter());
+    combined_relays.extend(default_relays);
+    combined_relays.extend(arg_relays);
 
     let unique_relays: Vec<String> = combined_relays.into_iter().collect();
 

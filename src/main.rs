@@ -19,7 +19,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     nip05_broadcast(domain, username).await;
 
-    start_server().await;
+    start_server().await?;
 
     Ok(())
 }

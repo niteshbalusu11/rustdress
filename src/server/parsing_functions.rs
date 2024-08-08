@@ -55,7 +55,7 @@ pub fn parse_amount_query(key: Option<(String, String)>) -> Result<i64, String> 
 
             match amount {
                 Ok(a) => {
-                    if a < CONSTANTS.min_sendamount || a > CONSTANTS.max_sendamount {
+                    if !(CONSTANTS.min_sendamount..=CONSTANTS.max_sendamount).contains(&a) {
                         return Err("AmountOutOfRange".to_string());
                     }
 
@@ -76,7 +76,7 @@ pub fn parse_comment_query(key: Option<(String, String)>) -> Result<String, Stri
                 return Err("CommentCannotBeBlankOrGreaterThan50Characters".to_string());
             }
 
-            return Ok(comment);
+            Ok(comment)
         }
 
         None => Ok("".to_string()),
@@ -85,9 +85,7 @@ pub fn parse_comment_query(key: Option<(String, String)>) -> Result<String, Stri
 
 pub fn parse_name_query(key: Option<(String, String)>) -> Result<String, String> {
     match key {
-        Some((_, comment)) => {
-            return Ok(comment);
-        }
+        Some((_, comment)) => Ok(comment),
 
         None => Err("".to_string()),
     }
@@ -122,10 +120,8 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<SignedEvent, S
                         return Err("MissingP-TagsInZapRequest".to_string());
                     }
 
-                    if ptags.is_some() {
-                        if ptags.unwrap().len() >= 2 {
-                            return Err("MultipleP-TagsArePresentInTheZapRequest".to_string());
-                        }
+                    if ptags.is_some() && ptags.unwrap().len() >= 2 {
+                        return Err("MultipleP-TagsArePresentInTheZapRequest".to_string());
                     }
 
                     let etags = get_tags(&tags, "e");
@@ -142,7 +138,7 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<SignedEvent, S
 
                     let event = UnsignedEvent {
                         content: p.content.clone(),
-                        created_at: p.created_at as i64,
+                        created_at: p.created_at,
                         kind: p.kind,
                         tags: p.tags.clone(),
                         pubkey: p.pubkey.clone(),
@@ -161,25 +157,25 @@ pub fn parse_nostr_query(key: Option<(String, String)>) -> Result<SignedEvent, S
                         return Err("FailedToGetNostrKeys".to_string());
                     }
 
-                    return Ok(p);
+                    Ok(p)
                 }
 
-                Err(_) => return Err("FailedToParseNostrQuery".to_string()),
-            };
+                Err(_) => Err("FailedToParseNostrQuery".to_string()),
+            }
         }
 
         _ => Err("".to_string()),
     }
 }
 
-pub fn get_tags(tags: &Vec<Vec<String>>, key: &str) -> Option<Vec<String>> {
+pub fn get_tags(tags: &[Vec<String>], key: &str) -> Option<Vec<String>> {
     let mut values = Vec::new();
 
     for tag in tags.iter() {
         if tag[0] == key {
             if key == "relays" {
-                for i in 1..tag.len() {
-                    values.push(tag[i].clone());
+                for value in tag.iter().skip(1) {
+                    values.push(value.clone());
                 }
             } else {
                 values.push(tag[1].clone());
@@ -241,10 +237,7 @@ pub fn handle_response_body() -> String {
         response_body["nostrPubkey"] = serde_json::Value::String(pubkey);
     }
 
-    let response_body_string =
-        serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
-
-    return response_body_string;
+    serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON")
 }
 
 pub fn get_digest(nostr: Option<&SignedEvent>) -> Vec<u8> {
@@ -260,10 +253,10 @@ pub fn get_digest(nostr: Option<&SignedEvent>) -> Vec<u8> {
     ])
     .expect("Failed to serialize metadata");
 
-    let metadata = if nostr.is_none() {
-        default_metadata
+    let metadata = if let Some(nostr_event) = nostr {
+        serde_json::to_string(&Some(nostr_event)).unwrap_or(default_metadata)
     } else {
-        serde_json::to_string(&Some(nostr.unwrap())).unwrap_or(default_metadata)
+        default_metadata
     };
 
     hasher.update(metadata.as_bytes());
@@ -273,7 +266,7 @@ pub fn get_digest(nostr: Option<&SignedEvent>) -> Vec<u8> {
 
 pub fn convert_key(key: &str) -> String {
     match ConvertKey::to_hex(key) {
-        Ok(key) => return key,
-        Err(_) => return key.to_string(),
-    };
+        Ok(key) => key,
+        Err(_) => key.to_string(),
+    }
 }

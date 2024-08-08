@@ -17,11 +17,11 @@ pub fn get_cert() -> String {
         panic!("ExpectedEitherTlsCertPathOrTlsCertHexToAuthenticateToLnd");
     }
 
-    if !cert_path.is_err() && !cert_path.as_ref().unwrap().is_empty() {
+    if cert_path.is_ok() && !cert_path.as_ref().unwrap().is_empty() {
         let cert_bytes = fs::read(cert_path.unwrap()).expect("FailedToReadTlsCertFile");
 
-        return hex::encode(cert_bytes);
+        hex::encode(cert_bytes)
     } else {
-        return cert_hex.unwrap();
+        cert_hex.unwrap()
     }
 }

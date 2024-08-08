@@ -6,11 +6,9 @@ pub async fn get_lnd() -> LndClient {
     let macaroon = get_macaroon();
     let socket = get_socket();
 
-    let client = lnd_grpc_rust::connect(cert, macaroon, socket)
+    lnd_grpc_rust::connect(cert, macaroon, socket)
         .await
-        .expect("FailedToAuthenticateToLnd");
-
-    return client;
+        .expect("FailedToAuthenticateToLnd")
 }
 
 pub async fn test_invoice(mut client: LndClient) -> Result<(), anyhow::Error> {

@@ -17,11 +17,11 @@ pub fn get_macaroon() -> String {
         panic!("ExpectedEitherMacaroonPathOrMacaroonHexToAuthenticateToLnd");
     }
 
-    if !macaroon_path.is_err() && !macaroon_path.as_ref().unwrap().is_empty() {
+    if macaroon_path.is_ok() && !macaroon_path.as_ref().unwrap().is_empty() {
         let mac_bytes = fs::read(macaroon_path.unwrap()).expect("FailedToReadMacaroonFile");
 
-        return hex::encode(mac_bytes);
+        hex::encode(mac_bytes)
     } else {
-        return macaroon_hex.unwrap();
+        macaroon_hex.unwrap()
     }
 }

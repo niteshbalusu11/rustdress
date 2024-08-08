@@ -31,6 +31,7 @@ pub const CONSTANTS: Constants = Constants {
     min_sendamount: 1000,
 };
 
+#[allow(clippy::upper_case_acronyms)]
 #[allow(non_camel_case_types)]
 pub enum EnvVariables {
     USERNAME,

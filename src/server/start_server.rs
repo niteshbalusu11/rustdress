@@ -5,7 +5,7 @@ use std::net::Ipv4Addr;
 use crate::server::constants::EnvVariables;
 use crate::server::handle_request::handle_request;
 
-pub async fn start_server() {
+pub async fn start_server() -> Result<(), hyper::Error> {
     let default_host = "127.0.0.1".parse::<Ipv4Addr>().unwrap();
     let default_port = 3000;
 
@@ -46,10 +46,5 @@ pub async fn start_server() {
     let server = Server::bind(&addr).serve(make_svc);
     println!("Listening on http://{}", addr);
 
-    let res = server.await;
-
-    match res {
-        Err(e) => panic!("FailedToStartHttpServer {}", e),
-        _ => return,
-    }
+    server.await
 }

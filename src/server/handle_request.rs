@@ -16,19 +16,17 @@ use super::{
 
 pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
-        (&hyper::Method::GET, "/") => {
-            return handle_default_path();
-        }
+        (&hyper::Method::GET, "/") => handle_default_path(),
 
         (&hyper::Method::GET, path) if path.starts_with("/.well-known/lnurlp/") => {
-            return handle_invoice_path(path, req.uri()).await
+            handle_invoice_path(path, req.uri()).await
         }
 
         (&hyper::Method::GET, path) if path.starts_with("/.well-known/nostr.json") => {
-            return handle_nip05_path(req.uri()).await
+            handle_nip05_path(req.uri()).await
         }
         // Return 404 Not Found for any other requests
-        _ => return handle_unknown_path(),
+        _ => handle_unknown_path(),
     }
 }
 
@@ -65,7 +63,7 @@ fn handle_default_path() -> Result<Response<Body>, hyper::Error> {
             let response_body_string = serde_json::to_string(&response_body)
                 .expect("Failed to serialize response body to JSON");
 
-            return handle_ok_request(response_body_string);
+            handle_ok_request(response_body_string)
         }
         Err(_) => handle_bad_request("Failed To Encode Lnurl"),
     }
@@ -86,7 +84,7 @@ fn handle_unknown_path() -> Result<Response<Body>, hyper::Error> {
     let response_body_string =
         serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
 
-    return handle_ok_request(response_body_string);
+    handle_ok_request(response_body_string)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -106,7 +104,7 @@ struct SuccessAction {
 }
 
 async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hyper::Error> {
-    let username = path.rsplitn(2, '/').next();
+    let username = path.rsplit('/').next();
     let response_body_string = handle_response_body();
 
     match username {
@@ -165,9 +163,9 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 
                 return handle_ok_request(success_response_body_string);
             }
-            return handle_ok_request(response_body_string);
+            handle_ok_request(response_body_string)
         }
-        _ => return handle_bad_request("Username Not Found"),
+        _ => handle_bad_request("Username Not Found"),
     }
 }
 
@@ -177,7 +175,7 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
         Err(_) => return handle_bad_request("Failed To Get Nostr Keys"),
     };
 
-    let relays = CONSTANTS.relays.clone();
+    let relays = CONSTANTS.relays;
     let username = std::env::var(EnvVariables::USERNAME).unwrap();
 
     let default_response_body = json!({
@@ -230,5 +228,5 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
 
         return handle_ok_request(response_body_string);
     }
-    return handle_ok_request(default_response_body_string);
+    handle_ok_request(default_response_body_string)
 }
