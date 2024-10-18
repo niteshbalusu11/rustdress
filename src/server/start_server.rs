@@ -46,5 +46,7 @@ pub async fn start_server() -> Result<(), hyper::Error> {
     let server = Server::bind(&addr).serve(make_svc);
     println!("Listening on http://{}", addr);
 
-    server.await
+    server.await.expect("Failed to start server");
+
+    Ok(())
 }

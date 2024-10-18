@@ -1,13 +1,10 @@
-target
+target/
 
-.env# Devenv
+.env
 
 .devenv*
 
 devenv.local.nix
-
-# direnv
 .direnv
 
-# pre-commit
 .pre-commit-config.yaml
