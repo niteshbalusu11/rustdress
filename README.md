@@ -29,3 +29,14 @@ cargo run --release
 
 sudo apt-get install cmake pkg-config
 ```
+
+### Using nix
+
+- You need (https://nixos.org/)[nix] installed
+- Install (https://devenv.sh/getting-started/)[devenv]
+
+```
+devenv shell
+
+# Then you can use cargo commands as usual
+```
