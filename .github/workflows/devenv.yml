@@ -1,4 +1,4 @@
-name: "devenv build"
+name: Devenv build
 
 on:
   pull_request:
@@ -21,7 +21,7 @@ jobs:
     - name: Install devenv.sh
       run: nix profile install nixpkgs#devenv
 
-    - Name: Check formatting
+    - name: Check formatting
       run: devenv shell check-fmt
     
     - name: Build the project
