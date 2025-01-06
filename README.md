@@ -40,3 +40,5 @@ devenv shell
 
 # Then you can use cargo commands as usual
 ```
+
+- Github Actions have also been updated to use nix and devenv to match local development.
