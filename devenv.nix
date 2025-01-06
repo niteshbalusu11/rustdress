@@ -8,7 +8,15 @@
 
   languages.rust.enable = true;
 
-  scripts.build.exec = ''bacon'';
+  # Build the project
+  scripts.build.exec = ''
+    cargo build --release
+  '';
+
+  # Check the formatting of the project
+  scripts.check-fmt.exec = ''
+    cargo fmt --all -- --check
+  '';
 
   enterTest = ''
     echo "Running tests"
