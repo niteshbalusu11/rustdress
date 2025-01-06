@@ -13,8 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v26
-    - uses: cachix/cachix-action@v14
+    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/magic-nix-cache-action@main
       with:
         name: devenv
 
