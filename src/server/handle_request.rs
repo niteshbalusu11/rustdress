@@ -18,6 +18,8 @@ pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper:
     match (req.method(), req.uri().path()) {
         (&hyper::Method::GET, "/") => handle_default_path(),
 
+        (&hyper::Method::GET, "/health") => handle_health_path(),
+
         (&hyper::Method::GET, path) if path.starts_with("/.well-known/lnurlp/") => {
             handle_invoice_path(path, req.uri()).await
         }
@@ -41,6 +43,17 @@ struct DefaultPathResponse {
     lnurl: String,
     decoded_url: String,
     info: Info,
+}
+
+fn handle_health_path() -> Result<Response<Body>, hyper::Error> {
+    let response_body = json!({
+      "status": "OK"
+    });
+
+    let response_body_string =
+        serde_json::to_string(&response_body).expect("Failed to serialize response body to JSON");
+
+    handle_ok_request(response_body_string)
 }
 
 fn handle_default_path() -> Result<Response<Body>, hyper::Error> {
