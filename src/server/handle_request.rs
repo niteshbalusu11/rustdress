@@ -18,7 +18,6 @@ use super::{
 pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let method = req.method();
     let path = req.uri().path();
-    info!(target: "server::handle_request", "Received {} request for path: {}", method, path);
 
     match (method, path) {
         (&hyper::Method::GET, "/") => {
