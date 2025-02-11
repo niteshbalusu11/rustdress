@@ -79,7 +79,6 @@ fn handle_health_path() -> Result<Response<Body>, hyper::Error> {
 }
 
 fn handle_default_path() -> Result<Response<Body>, hyper::Error> {
-    info!(target: "server::handle_request::default", "Processing default path request");
     let (domain, username) = get_identifiers();
     debug!(target: "server::handle_request::default", "Using domain: {}, username: {}", domain, username);
 

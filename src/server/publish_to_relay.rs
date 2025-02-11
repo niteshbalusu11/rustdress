@@ -178,7 +178,7 @@ async fn send_message(uri: String, message: String) -> Result<(), ()> {
             (websocket_stream, res)
         }
         Err(err) => {
-            error!(target: "server::publish", "Failed to connect to {}: {}", uri, err);
+            warn!(target: "server::publish", "Failed to connect to {}: {}", uri, err);
             return Err(());
         }
     };
@@ -188,7 +188,7 @@ async fn send_message(uri: String, message: String) -> Result<(), ()> {
             info!(target: "server::publish", "Successfully sent message to {}", uri);
         }
         Err(e) => {
-            error!(target: "server::publish", "Failed to send message to {}: {}", uri, e);
+            warn!(target: "server::publish", "Failed to send message to {}: {}", uri, e);
             return Err(());
         }
     }
