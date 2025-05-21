@@ -1483,7 +1483,7 @@ checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
 name = "rustdress"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "bech32",
