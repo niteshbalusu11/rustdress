@@ -4,6 +4,7 @@
     pkgs.pkg-config
     pkgs.openssl
     pkgs.cmake
+    pkgs.git
   ];
 
   languages.rust.enable = true;
