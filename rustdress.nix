@@ -1,4 +1,4 @@
-{ lib, fetchFromGitHub, rustPlatform }:
+{ lib, fetchFromGitHub, rustPlatform, bacon, cmake, openssl, pkg-config }:
 # { lib, fetchFromGitHub, pkgs ? import <nixpkgs> { } }:
 
 rustPlatform.buildRustPackage rec {
@@ -15,7 +15,13 @@ rustPlatform.buildRustPackage rec {
   # cargoHash = "0000000000000000000000000000000000000000000000000000";
   cargoLock.lockFile = ./Cargo.lock;
 
-  # buildInputs = [];
+  buildInputs = [
+    bacon
+    cmake
+    # git
+    openssl
+    pkg-config
+  ];
 
   # doCheck = false;
 
