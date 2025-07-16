@@ -14,11 +14,12 @@ rustPlatform.buildRustPackage rec {
 
   cargoLock.lockFile = ./Cargo.lock;
 
-  buildInputs = [
-    bacon
+  nativeBuildInputs = [
     cmake
-    openssl
     pkg-config
+  ];
+  buildInputs = [
+    openssl
   ];
 
   meta = with lib; {
