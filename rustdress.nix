@@ -12,18 +12,14 @@ rustPlatform.buildRustPackage rec {
     sha256 = "sha256-XEXvAAnktr7gfk3y8kLtrVmg0slx5wc4dCCWT2r+Wj0=";
   };
 
-  # cargoHash = "0000000000000000000000000000000000000000000000000000";
   cargoLock.lockFile = ./Cargo.lock;
 
   buildInputs = [
     bacon
     cmake
-    # git
     openssl
     pkg-config
   ];
-
-  # doCheck = false;
 
   meta = with lib; {
     description = "Self hosted Lightning Address Server";
