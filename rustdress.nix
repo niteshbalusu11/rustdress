@@ -1,5 +1,4 @@
-{ lib, fetchFromGitHub, rustPlatform, bacon, cmake, openssl, pkg-config }:
-# { lib, fetchFromGitHub, pkgs ? import <nixpkgs> { } }:
+{ lib, fetchFromGitHub, rustPlatform, cmake, openssl, pkg-config }:
 
 rustPlatform.buildRustPackage rec {
   pname = "rustdress";
@@ -12,7 +11,7 @@ rustPlatform.buildRustPackage rec {
     sha256 = "sha256-XEXvAAnktr7gfk3y8kLtrVmg0slx5wc4dCCWT2r+Wj0=";
   };
 
-  cargoLock.lockFile = ./Cargo.lock;
+  cargoHash = "sha256-COuHTjEy/VkfVd2/kjTKw1kiJI0XC72TEXaS8lVXsAQ=";
 
   nativeBuildInputs = [
     cmake
