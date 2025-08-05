@@ -78,7 +78,7 @@ fn handle_health_path() -> Result<Response<Body>, hyper::Error> {
 }
 
 fn handle_default_path() -> Result<Response<Body>, hyper::Error> {
-    let (domain, username) = get_identifiers();
+    let (domain, username) = get_identifiers(None);
     debug!(target: "server::handle_request::default", "Using domain: {}, username: {}", domain, username);
 
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + &username;
@@ -152,11 +152,13 @@ struct SuccessAction {
 async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hyper::Error> {
     info!(target: "server::handle_request::invoice", "Processing invoice request for path: {}", path);
     let username = path.rsplit('/').next();
-    let response_body_string = handle_response_body();
+    let response_body_string = handle_response_body(username);
+
+    info!(target: "server::handle_request::invoice", "Checking username: {:?}", username);
 
     match username {
         Some(name) if !name.is_empty() => {
-            debug!(target: "server::handle_request::invoice", "Processing request for username: {}", name);
+            info!(target: "server::handle_request::invoice", "Processing request for username: {}", name);
             if let Some(query_str) = uri.query() {
                 debug!(target: "server::handle_request::invoice", "Processing query parameters: {}", query_str);
                 let query_pairs: Vec<(String, String)> = query_str
@@ -176,7 +178,7 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
                 let parsed_nostr_query = parse_nostr_query(nostr_key.cloned());
                 debug!(target: "server::handle_request::invoice", "Parsed nostr query: {:?}", parsed_nostr_query);
 
-                let digest = get_digest(parsed_nostr_query.as_ref().ok());
+                let digest = get_digest(parsed_nostr_query.as_ref().ok(), Some(name));
 
                 let amount = match parse_amount_query(amount_key.cloned()) {
                     Ok(a) => a,

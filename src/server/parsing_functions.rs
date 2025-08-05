@@ -239,9 +239,9 @@ pub fn get_tags(tags: &[Vec<String>], key: &str) -> Option<Vec<String>> {
     }
 }
 
-pub fn handle_response_body() -> String {
-    debug!(target: "server::parsing", "Generating response body");
-    let (domain, username) = get_identifiers();
+pub fn handle_response_body(name: Option<&str>) -> String {
+    debug!(target: "server::parsing", "Generating response body for name: {:?}", name);
+    let (domain, username) = get_identifiers(name);
 
     let identifier = format!("{}@{}", username, domain);
     debug!(target: "server::parsing", "Using identifier: {}", identifier);
@@ -295,11 +295,11 @@ pub fn handle_response_body() -> String {
     }
 }
 
-pub fn get_digest(nostr: Option<&SignedEvent>) -> Vec<u8> {
-    debug!(target: "server::parsing", "Calculating digest");
+pub fn get_digest(nostr: Option<&SignedEvent>, name: Option<&str>) -> Vec<u8> {
+    debug!(target: "server::parsing", "Calculating digest for name: {:?}", name);
     let mut hasher = Sha256::new();
 
-    let (domain, username) = get_identifiers();
+    let (domain, username) = get_identifiers(name);
     let identifier = format!("{}@{}", username, domain);
 
     let default_metadata = match serde_json::to_string(&[

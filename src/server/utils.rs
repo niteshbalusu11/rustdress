@@ -23,10 +23,21 @@ use crate::{
 
 use super::{constants::Nip05EventDetails, publish_to_relay::publish_zap_to_relays};
 
-pub fn get_identifiers() -> (String, String) {
-    debug!(target: "server::utils", "Loading identifiers from config");
+pub fn get_identifiers(name: Option<&str>) -> (String, String) {
+    debug!(target: "server::utils", "Loading identifiers from config for name: {:?}", name);
     let config = get_config();
-    (config.domain.clone(), "".to_string())
+    let username = name
+        .and_then(|n| {
+            config
+                .users
+                .iter()
+                .find(|u| u.username == n)
+                .map(|u| u.username.clone())
+        })
+        .or_else(|| config.users.first().map(|u| u.username.clone()))
+        .unwrap_or_default();
+
+    (config.domain.clone(), username)
 }
 
 pub fn bech32_encode(prefix: String, data: String) -> Result<String, bech32::Error> {
