@@ -31,6 +31,7 @@ pub fn handle_bad_request(reason: &str) -> Result<Response<Body>, hyper::Error> 
 
     let resp = Response::builder()
         .status(StatusCode::BAD_REQUEST)
+        .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
         .body(Body::from(response_body_string))
         .unwrap();
