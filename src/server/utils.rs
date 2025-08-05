@@ -4,7 +4,6 @@ use std::{
 };
 
 use bech32::{encode, ToBase32, Variant};
-use dotenv::dotenv;
 use lnd_grpc_rust::{
     invoicesrpc::SubscribeSingleInvoiceRequest,
     lnrpc::{invoice::InvoiceState, Invoice},
@@ -14,46 +13,20 @@ use rusted_nostr_tools::{
     event_methods::{get_event_hash, sign_event, SignedEvent, UnsignedEvent},
     GeneratePublicKey,
 };
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 use crate::{
+    config::get_config,
     credentials::get_lnd::get_lnd,
-    server::{constants::CONSTANTS, publish_to_relay::publish},
+    server::{constants::CONSTANTS, parsing_functions::convert_key, publish_to_relay::publish},
 };
 
-use super::{
-    constants::{EnvVariables, Nip05EventDetails},
-    parsing_functions::convert_key,
-    publish_to_relay::publish_zap_to_relays,
-};
+use super::{constants::Nip05EventDetails, publish_to_relay::publish_zap_to_relays};
 
 pub fn get_identifiers() -> (String, String) {
-    debug!(target: "server::utils", "Loading environment variables for identifiers");
-    dotenv().ok();
-
-    let domain = match std::env::var(EnvVariables::DOMAIN) {
-        Ok(domain) => {
-            debug!(target: "server::utils", "Loaded domain: {}", domain);
-            domain
-        }
-        Err(e) => {
-            error!(target: "server::utils", "Failed to load domain: {}", e);
-            String::new()
-        }
-    };
-
-    let username = match std::env::var(EnvVariables::USERNAME) {
-        Ok(username) => {
-            debug!(target: "server::utils", "Loaded username: {}", username);
-            username
-        }
-        Err(e) => {
-            error!(target: "server::utils", "Failed to load username: {}", e);
-            String::new()
-        }
-    };
-
-    (domain, username)
+    debug!(target: "server::utils", "Loading identifiers from config");
+    let config = get_config();
+    (config.domain.clone(), "".to_string())
 }
 
 pub fn bech32_encode(prefix: String, data: String) -> Result<String, bech32::Error> {
@@ -74,51 +47,22 @@ pub fn bech32_encode(prefix: String, data: String) -> Result<String, bech32::Err
 
 pub fn add_hop_hints() -> bool {
     debug!(target: "server::utils", "Checking if hop hints should be included");
-    let is_add_hints = std::env::var(EnvVariables::INCLUDE_HOP_HINTS);
-
-    match is_add_hints {
-        Ok(add) => match add.as_str() {
-            "true" => {
-                debug!(target: "server::utils", "Hop hints will be included");
-                true
-            }
-            "false" => {
-                debug!(target: "server::utils", "Hop hints will not be included");
-                false
-            }
-            _ => {
-                warn!(target: "server::utils", "Invalid value for INCLUDE_HOP_HINTS: {}, defaulting to false", add);
-                false
-            }
-        },
-        Err(e) => {
-            debug!(target: "server::utils", "INCLUDE_HOP_HINTS not set ({}), defaulting to false", e);
-            false
-        }
-    }
+    let config = get_config();
+    config.include_hop_hints.unwrap_or(false)
 }
 
 pub fn get_nostr_keys() -> Result<(String, String), String> {
-    debug!(target: "server::utils", "Loading nostr keys");
-    dotenv::dotenv().ok();
+    debug!(target: "server::utils", "Loading nostr keys from config");
+    let config = get_config();
+    let privkey = config.nostr.private_key.clone();
 
-    let privkey = match std::env::var(EnvVariables::NOSTR_PRIVATE_KEY) {
-        Ok(key) => {
-            let converted = convert_key(&key);
-            debug!(target: "server::utils", "Successfully loaded and converted private key");
-            converted
-        }
-        Err(e) => {
-            error!(target: "server::utils", "Failed to load nostr private key: {}", e);
-            return Err("NostrPrivateKeyIsUndefined".to_string());
-        }
-    };
+    let converted_priv_key = convert_key(&privkey);
 
-    let binding = GeneratePublicKey::new(&privkey);
+    let binding = GeneratePublicKey::new(&converted_priv_key);
     let pubkey_hex = binding.hex_public_key();
     debug!(target: "server::utils", "Generated public key from private key");
 
-    Ok((privkey, pubkey_hex.to_string()))
+    Ok((converted_priv_key, pubkey_hex.to_string()))
 }
 
 pub async fn create_invoice(
@@ -244,6 +188,8 @@ pub async fn nip05_broadcast(domain: String, username: String) {
                 }
             };
 
+            debug!("got the event hash");
+
             let signature = match sign_event(&event, &privkey) {
                 Ok(sig) => sig,
                 Err(e) => {
@@ -251,6 +197,8 @@ pub async fn nip05_broadcast(domain: String, username: String) {
                     return;
                 }
             };
+
+            debug!("got the event signature");
 
             let nip05_event_details = Nip05EventDetails {
                 content,
@@ -287,24 +235,17 @@ pub async fn nip05_broadcast(domain: String, username: String) {
 
 pub fn get_relays(relays: Option<Vec<String>>) -> Vec<String> {
     debug!(target: "server::utils", "Getting relay list");
+    let config = get_config();
     let arg_relays = relays.unwrap_or_default();
     debug!(target: "server::utils", "Argument relays count: {}", arg_relays.len());
 
-    let env_relays = std::env::var(EnvVariables::RELAYS);
-    let mut env_relays_vec: Vec<String> = vec![];
-
-    if let Ok(ref r) = env_relays {
-        env_relays_vec = r.split(',').map(|s| s.to_string()).collect();
-        debug!(target: "server::utils", "Environment relays count: {}", env_relays_vec.len());
-    } else {
-        debug!(target: "server::utils", "No environment relays configured");
-    }
+    let config_relays = config.nostr.relays.clone().unwrap_or_default();
 
     let default_relays: Vec<String> = CONSTANTS.relays.iter().map(|s| s.to_string()).collect();
     debug!(target: "server::utils", "Default relays count: {}", default_relays.len());
 
     // Create a HashSet from both vectors to remove duplicates.
-    let mut combined_relays: HashSet<String> = env_relays_vec.into_iter().collect();
+    let mut combined_relays: HashSet<String> = config_relays.into_iter().collect();
     combined_relays.extend(default_relays);
     combined_relays.extend(arg_relays);
 

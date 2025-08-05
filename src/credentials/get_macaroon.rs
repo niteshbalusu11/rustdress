@@ -1,27 +1,29 @@
-use dotenv::dotenv;
+use crate::config::get_config;
 use std::fs;
 
-use crate::server::constants::EnvVariables;
-
 pub fn get_macaroon() -> String {
-    dotenv().ok();
+    let config = get_config();
+    let lnd_config = &config.lnd;
 
-    // Check if all env variables are present.
-    let macaroon_path = std::env::var(EnvVariables::MACAROON_PATH);
-    let macaroon_hex = std::env::var(EnvVariables::MACAROON_HEX);
+    let macaroon_path = &lnd_config.macaroon_path;
+    let macaroon_hex = &lnd_config.macaroon_hex;
 
-    // Check if macaroon_path and macaroon_hex are both empty or undefined.
-    if (macaroon_path.is_err() || macaroon_path.as_ref().unwrap().is_empty())
-        && (macaroon_hex.is_err() || macaroon_hex.as_ref().unwrap().is_empty())
-    {
+    if macaroon_path.is_none() && macaroon_hex.is_none() {
         panic!("ExpectedEitherMacaroonPathOrMacaroonHexToAuthenticateToLnd");
     }
 
-    if macaroon_path.is_ok() && !macaroon_path.as_ref().unwrap().is_empty() {
-        let mac_bytes = fs::read(macaroon_path.unwrap()).expect("FailedToReadMacaroonFile");
-
-        hex::encode(mac_bytes)
-    } else {
-        macaroon_hex.unwrap()
+    if let Some(path) = macaroon_path {
+        if !path.is_empty() {
+            let mac_bytes = fs::read(path).expect("FailedToReadMacaroonFile");
+            return hex::encode(mac_bytes);
+        }
     }
+
+    if let Some(hex) = macaroon_hex {
+        if !hex.is_empty() {
+            return hex.to_string();
+        }
+    }
+
+    panic!("ExpectedEitherMacaroonPathOrMacaroonHexToAuthenticateToLnd");
 }

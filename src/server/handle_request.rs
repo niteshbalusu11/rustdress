@@ -6,7 +6,6 @@ use serde_json::json;
 use tracing::{debug, error, info, warn};
 
 use super::{
-    constants::EnvVariables,
     parsing_functions::{
         convert_key, find_key, get_digest, handle_bad_request, handle_ok_request,
         handle_response_body, parse_amount_query, parse_comment_query, parse_name_query,
@@ -14,6 +13,7 @@ use super::{
     },
     utils::{create_invoice, get_identifiers},
 };
+use crate::config::get_config;
 
 pub async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let method = req.method();
@@ -239,33 +239,9 @@ async fn handle_invoice_path(path: &str, uri: &Uri) -> Result<Response<Body>, hy
 async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
     info!(target: "server::handle_request::nip05", "Processing NIP-05 verification request");
 
-    let pubkey = match std::env::var(EnvVariables::NIP_05_PUBKEY) {
-        Ok(key) => convert_key(&key),
-        Err(e) => {
-            error!(target: "server::handle_request::nip05", "Failed to get Nostr public key: {:?}", e);
-            return handle_bad_request("Failed To Get Nostr Keys");
-        }
-    };
+    let config = get_config();
 
     let relays = CONSTANTS.relays;
-    let username = match std::env::var(EnvVariables::USERNAME) {
-        Ok(username) => username,
-        Err(e) => {
-            error!(target: "server::handle_request::nip05", "Failed to get username: {:?}", e);
-            return handle_bad_request("Failed To Get Username");
-        }
-    };
-
-    debug!(target: "server::handle_request::nip05", "Using pubkey: {}, username: {}", pubkey, username);
-
-    let default_response_body = json!({
-      "names": {
-        &username: &pubkey,
-      },
-      "relays": {
-        &pubkey: &relays,
-      }
-    });
 
     if let Some(query_str) = uri.query() {
         debug!(target: "server::handle_request::nip05", "Processing query parameters: {}", query_str);
@@ -289,32 +265,49 @@ async fn handle_nip05_path(uri: &Uri) -> Result<Response<Body>, hyper::Error> {
             }
         };
 
-        if name != username {
-            warn!(target: "server::handle_request::nip05", "Username mismatch: {} != {}", name, username);
-            return handle_bad_request("Username Not Found");
+        let user = config.users.iter().find(|u| u.username == name);
+
+        if let Some(user) = user {
+            let pubkey = convert_key(&user.pubkey);
+            let response_body = json!({
+              "names": {
+                &name: &pubkey,
+              },
+              "relays": {
+                &pubkey: &relays,
+              }
+            });
+
+            match serde_json::to_string(&response_body) {
+                Ok(response_body_string) => {
+                    info!(target: "server::handle_request::nip05", "Successfully created NIP-05 response for name query");
+                    handle_ok_request(response_body_string)
+                }
+                Err(e) => {
+                    error!(target: "server::handle_request::nip05", "Failed to serialize NIP-05 response: {}", e);
+                    handle_bad_request("Internal Server Error")
+                }
+            }
+        } else {
+            warn!(target: "server::handle_request::nip05", "Username not found: {}", name);
+            handle_bad_request("Username Not Found")
+        }
+    } else {
+        let mut names = std::collections::HashMap::new();
+        let mut relay_map = std::collections::HashMap::new();
+
+        for user in &config.users {
+            let pubkey = convert_key(&user.pubkey);
+            names.insert(user.username.clone(), pubkey.clone());
+            relay_map.insert(pubkey, relays.to_vec());
         }
 
         let response_body = json!({
-          "names": {
-            name: pubkey,
-          },
-          "relays": {
-            pubkey: relays,
-          }
+            "names": names,
+            "relays": relay_map,
         });
 
         match serde_json::to_string(&response_body) {
-            Ok(response_body_string) => {
-                info!(target: "server::handle_request::nip05", "Successfully created NIP-05 response for name query");
-                handle_ok_request(response_body_string)
-            }
-            Err(e) => {
-                error!(target: "server::handle_request::nip05", "Failed to serialize NIP-05 response: {}", e);
-                handle_bad_request("Internal Server Error")
-            }
-        }
-    } else {
-        match serde_json::to_string(&default_response_body) {
             Ok(default_response_body_string) => {
                 info!(target: "server::handle_request::nip05", "Successfully created default NIP-05 response");
                 handle_ok_request(default_response_body_string)

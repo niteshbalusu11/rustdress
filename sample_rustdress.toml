@@ -1,0 +1,28 @@
+domain = "yourdomain"
+max_sendable = 100000
+include_hop_hints = true
+
+[[users]]
+username = "alice"
+pubkey = "alice nostr pubkey (npub or hex)"
+[[users]]
+username = "bob"
+pubkey = "bob nostr pubkey (npub or hex)"
+
+[lnd]
+cert_path = "path to your lnd tls.cert"
+# cert_hex = ""
+macaroon_path = "path to your lnd macaroon"
+# macaroon_hex = ""
+# Grpc host:port
+socket = "localhost:10009"
+
+# Host and port Rustdress runs on
+[server]
+host = "0.0.0.0"
+port = 6000
+
+# Nostr zap details
+[nostr]
+private_key = "random nostr private key (nsec or hex) to sign zaps"
+relays = ["wss://relay.nostr.band", "wss://nostr-pub.wellorder.net", "wss://brb.io"]

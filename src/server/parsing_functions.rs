@@ -1,5 +1,3 @@
-use std::env;
-
 use hyper::{Body, Response, StatusCode};
 use rusted_nostr_tools::{
     event_methods::{get_event_hash, SignedEvent, UnsignedEvent},
@@ -10,12 +8,9 @@ use sha2::{Digest, Sha256};
 use tracing::{debug, error, warn};
 use urlencoding::decode;
 
-use crate::server::constants::CONSTANTS;
+use crate::{config::get_config, server::constants::CONSTANTS};
 
-use super::{
-    constants::EnvVariables,
-    utils::{get_identifiers, get_nostr_keys},
-};
+use super::utils::{get_identifiers, get_nostr_keys};
 
 pub fn find_key<'a>(key: &'a str, vector: &'a [(String, String)]) -> Option<&'a (String, String)> {
     debug!(target: "server::parsing", "Searching for key: {} in query parameters", key);
@@ -36,6 +31,7 @@ pub fn handle_bad_request(reason: &str) -> Result<Response<Body>, hyper::Error> 
 
     let resp = Response::builder()
         .status(StatusCode::BAD_REQUEST)
+        .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
         .body(Body::from(response_body_string))
         .unwrap();
@@ -263,26 +259,8 @@ pub fn handle_response_body() -> String {
 
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
-    let max_sendable = match env::var(EnvVariables::MAX_SENDABLE)
-        .unwrap_or(CONSTANTS.max_sendamount.to_string())
-        .parse::<i64>()
-    {
-        Ok(n) => {
-            if n < 1000 {
-                warn!(target: "server::parsing", "Max sendable amount {} is too low, using default: {}", 
-                    n, CONSTANTS.max_sendamount);
-                CONSTANTS.max_sendamount
-            } else {
-                debug!(target: "server::parsing", "Using configured max sendable amount: {}", n);
-                n
-            }
-        }
-        Err(e) => {
-            warn!(target: "server::parsing", "Failed to parse max sendable amount: {}, using default: {}", 
-                e, CONSTANTS.max_sendamount);
-            CONSTANTS.max_sendamount
-        }
-    };
+    let config = get_config();
+    let max_sendable = config.max_sendable.unwrap_or(CONSTANTS.max_sendamount);
 
     let mut response_body = json!({
         "callback": lnurl_url,

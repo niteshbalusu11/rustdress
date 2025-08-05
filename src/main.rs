@@ -1,10 +1,11 @@
 use credentials::get_lnd::{get_lnd, test_invoice};
-use server::{constants::EnvVariables, start_server::start_server, utils::nip05_broadcast};
+use server::{start_server::start_server, utils::nip05_broadcast};
+mod config;
 mod server;
 
 mod credentials;
-use dotenv::dotenv;
-use tracing::{error, info, Level};
+use crate::config::get_config;
+use tracing::{info, Level};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 #[tokio::main]
@@ -26,18 +27,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
     info!("Starting Rustdress application");
 
-    dotenv().ok();
-    info!("Loaded environment variables");
-
-    // Check if username and domain exist
-    let domain = std::env::var(EnvVariables::DOMAIN).map_err(|e| {
-        error!("Failed to get DOMAIN environment variable: {}", e);
-        e
-    })?;
-    let username = std::env::var(EnvVariables::USERNAME).map_err(|e| {
-        error!("Failed to get USERNAME environment variable: {}", e);
-        e
-    })?;
+    let config = get_config();
+    let domain = config.domain.clone();
 
     info!("Connecting to LND node");
     let lnd = get_lnd().await;
@@ -46,7 +37,9 @@ async fn main() -> Result<(), anyhow::Error> {
     test_invoice(lnd).await?;
 
     info!("Broadcasting NIP-05 verification");
-    nip05_broadcast(domain, username).await;
+    for user in &config.users {
+        nip05_broadcast(domain.clone(), user.username.clone()).await;
+    }
 
     info!("Starting server");
     start_server().await?;
