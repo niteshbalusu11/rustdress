@@ -22,4 +22,4 @@ RUN apt-get update && \
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/target/release/rustdress /usr/local/bin/
 # Run the Rust binary
-CMD ["rustdress"]
+CMD ["rustdress", "--config", "/app/config.toml"]
