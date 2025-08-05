@@ -19,11 +19,12 @@ git clone https://github.com/niteshbalusu11/rustdress.git
 # Change directory
 cd rustdress
 
-# Edit the .env file and add the necessary values
-cp .env.example .env
+# Copy the sample config file and edit it
+cp sample_rustdress.toml rustdress.toml
 
-# Run the app
-cargo run --release
+# Run the app, passing the config file path
+# Default path is ~/.config/rustdress/rustdress.toml
+cargo run --release -- --config /path/to/rustdress.toml
 
 # You might have to install cmake, pkg-config
 
