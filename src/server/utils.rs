@@ -56,11 +56,7 @@ pub fn get_nostr_keys() -> Result<(String, String), String> {
     let config = get_config();
     let privkey = config.nostr.private_key.clone();
 
-    debug!("privkey is {}", privkey);
-
     let converted_priv_key = convert_key(&privkey);
-
-    debug!("converted privkey is {}", converted_priv_key);
 
     let binding = GeneratePublicKey::new(&converted_priv_key);
     let pubkey_hex = binding.hex_public_key();

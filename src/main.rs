@@ -14,7 +14,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let _subscriber = FmtSubscriber::builder()
         .with_env_filter(
             EnvFilter::from_default_env()
-                .add_directive(Level::DEBUG.into())
+                .add_directive(Level::INFO.into())
                 .add_directive("rustdress=debug".parse().unwrap()),
         )
         .with_thread_ids(true)
