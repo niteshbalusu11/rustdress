@@ -20,18 +20,9 @@ services:
     restart: on-failure
     ports:
       - "5000:5000"
-    environment:
-      - USERNAME=your_username
-      - DOMAIN=your_domain
-      - CERT_HEX=your_cert_hex
-      - MACAROON_HEX=your_macaroon_hex
-      - SOCKET=lnd:10009
-      - HOST=0.0.0.0
-      - PORT=5000
-      - INCLUDE_HOP_HINTS=true
-      - NOSTR_PRIVATE_KEY=random_nostr_private_key
-      - NIP_05_PUBKEY=your_nostr_pubkey
-      - RELAYS=wss://relay.nostr.band,  wss://brb.io
+    volumes:
+      - /root/rustdress.toml:/app/rustdress.toml
+      - /root/.lnd:/app/.lnd
 
   caddy:
     container_name: caddy # caddy is a reverse proxy that will handle the SSL certificate and redirect traffic to rustdress
