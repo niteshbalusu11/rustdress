@@ -1,9 +1,6 @@
-use dotenv::dotenv;
-
-use crate::server::constants::EnvVariables;
+use crate::config::get_config;
 
 pub fn get_socket() -> String {
-    dotenv().ok();
-
-    std::env::var(EnvVariables::SOCKET).expect("ExpectedSocketToAuthenticateToLnd")
+    let config = get_config();
+    config.lnd.socket.clone()
 }
