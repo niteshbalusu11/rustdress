@@ -1,4 +1,5 @@
-{ pkgs, lib, config, inputs, ... }: {
+{ pkgs, lib, ... }:
+{
   packages = [
     pkgs.bacon
     pkgs.pkg-config
@@ -27,8 +28,8 @@
   # Darwin-specific configurations
   env = lib.mkMerge [
     {
-        env.OPENSSL_DIR = "${pkgs.openssl.dev}";
-        env.OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+      env.OPENSSL_DIR = "${pkgs.openssl.dev}";
+      env.OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
       # Common environment variables here
     }
     (lib.mkIf pkgs.stdenv.isDarwin {
