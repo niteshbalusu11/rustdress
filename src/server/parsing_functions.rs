@@ -63,7 +63,7 @@ pub fn parse_amount_query(key: Option<(String, String)>) -> Result<i64, String> 
             match amount {
                 Ok(a) => {
                     if !(CONSTANTS.min_sendamount..=CONSTANTS.max_sendamount).contains(&a) {
-                        warn!(target: "server::parsing", "Amount {} is out of range [{}, {}]", 
+                        warn!(target: "server::parsing", "Amount {} is out of range [{}, {}]",
                             a, CONSTANTS.min_sendamount, CONSTANTS.max_sendamount);
                         return Err("AmountOutOfRange".to_string());
                     }
@@ -89,7 +89,7 @@ pub fn parse_comment_query(key: Option<(String, String)>) -> Result<String, Stri
     match key {
         Some((_, comment)) => {
             if comment.len() > CONSTANTS.max_comment_length {
-                warn!(target: "server::parsing", "Comment length {} exceeds maximum {}", 
+                warn!(target: "server::parsing", "Comment length {} exceeds maximum {}",
                     comment.len(), CONSTANTS.max_comment_length);
                 return Err("CommentCannotBeBlankOrGreaterThan50Characters".to_string());
             }
@@ -260,12 +260,12 @@ pub fn handle_response_body(name: Option<&str>) -> String {
     let lnurl_url = "https://".to_owned() + &domain + "/.well-known/lnurlp/" + username.as_str();
 
     let config = get_config();
-    let max_sendable = config.max_sendable.unwrap_or(CONSTANTS.max_sendamount);
+    let max_sendable_msat = config.max_sendable_msat.unwrap_or(CONSTANTS.max_sendamount);
 
     let mut response_body = json!({
         "callback": lnurl_url,
         "commentAllowed": CONSTANTS.max_comment_length,
-        "maxSendable": max_sendable,
+        "maxSendable": max_sendable_msat,
         "metadata": metadata,
         "minSendable": CONSTANTS.min_sendamount,
         "tag": "payRequest",

@@ -60,7 +60,7 @@ pub struct Nostr {
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     pub domain: String,
-    pub max_sendable: Option<i64>,
+    pub max_sendable_msat: Option<i64>,
     pub include_hop_hints: Option<bool>,
     pub users: Vec<User>,
     pub lnd: Lnd,
