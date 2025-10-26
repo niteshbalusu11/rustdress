@@ -1,5 +1,5 @@
 domain = "yourdomain"
-max_sendable = 100000
+max_sendable_msat = 100000
 include_hop_hints = true
 
 [[users]]
