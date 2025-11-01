@@ -1,0 +1,23 @@
+name: Nix build
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Format
+        run: nix develop .# --command bash -c "cargo fmt"
+
+      - name: Build the project
+        run: nix develop .# --command bash -c "cargo build --release"
