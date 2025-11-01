@@ -1,4 +1,5 @@
 # RustDress
+
 Self hosted Lightning Address Server and NIP-05 Verification Server
 <br></br>
 
@@ -7,12 +8,13 @@ Self hosted Lightning Address Server and NIP-05 Verification Server
 - Check the `Dockerfile` and the `sample-docker-compose.yaml` file.
 
 ### To build from source:
+
 Pre-requisites:
-You will need rust installed.
+You will need rust installed. Note: if you use nix (see below), then nix will install rust and you don't need to install rust separately.
+
 https://www.rust-lang.org/
 
-
-```bash
+```sh
 #Clone the repo
 git clone https://github.com/niteshbalusu11/rustdress.git
 
@@ -33,13 +35,12 @@ sudo apt-get install cmake pkg-config
 
 ### Using nix
 
-- You need (https://nixos.org/)[nix] installed
-- Install (https://devenv.sh/getting-started/)[devenv]
+- Make sure nix is installed. It's highly recommended to use the [Determinate Systems Installer](https://zero-to-nix.com/start/install/#run)
 
-```
-devenv shell
+```sh
+nix develop
 
 # Then you can use cargo commands as usual
 ```
 
-- Github Actions have also been updated to use nix and devenv to match local development.
+- Github Actions have also been updated to use nix to match local development.
