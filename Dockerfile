@@ -1,5 +1,5 @@
 # First stage: Build the Rust application
-FROM rust:1.82 AS builder
+FROM rust:1.90 AS builder
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y cmake pkg-config && \
