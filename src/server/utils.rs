@@ -3,15 +3,15 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use bech32::{encode, ToBase32, Variant};
+use bech32::{ToBase32, Variant, encode};
 use lnd_grpc_rust::{
-    invoicesrpc::SubscribeSingleInvoiceRequest,
-    lnrpc::{invoice::InvoiceState, Invoice},
     LndClient,
+    invoicesrpc::SubscribeSingleInvoiceRequest,
+    lnrpc::{Invoice, invoice::InvoiceState},
 };
 use rusted_nostr_tools::{
-    event_methods::{get_event_hash, sign_event, SignedEvent, UnsignedEvent},
     GeneratePublicKey,
+    event_methods::{SignedEvent, UnsignedEvent, get_event_hash, sign_event},
 };
 use tracing::{debug, error, info};
 
@@ -145,7 +145,7 @@ async fn watch_invoice(zap_request: SignedEvent, mut lnd: LndClient, r_hash: &[u
             return;
         }
     } {
-        if let Some(state) = InvoiceState::from_i32(invoice.state) {
+        if let Ok(state) = InvoiceState::try_from(invoice.state) {
             debug!(target: "server::utils", "Invoice state update: {:?}", state);
             // If this invoice was Settled we can do something with it
             if state == InvoiceState::Settled {

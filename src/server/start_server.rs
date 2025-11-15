@@ -1,5 +1,5 @@
 use hyper::service::{make_service_fn, service_fn};
-use hyper::Server;
+use hyper::server::Server;
 use std::net::Ipv4Addr;
 use tracing::{info, warn};
 
